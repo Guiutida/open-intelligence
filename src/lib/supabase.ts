@@ -1,19 +1,41 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
+function isValidHttpUrl(urlStr?: string): boolean {
+  if (!urlStr || typeof urlStr !== "string") return false;
+  try {
+    const parsed = new URL(urlStr);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 // Lê variáveis de ambiente tanto do Vite (import.meta.env) quanto do Node/Docker (process.env)
-const supabaseUrl =
+const rawUrl =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_URL) ||
   (typeof process !== "undefined" && process.env?.VITE_SUPABASE_URL);
 
-const supabaseAnonKey =
+const rawKey =
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
   (typeof process !== "undefined" && process.env?.VITE_SUPABASE_ANON_KEY);
 
+const supabaseUrl = isValidHttpUrl(rawUrl) ? rawUrl : null;
+const supabaseAnonKey = rawKey && typeof rawKey === "string" && rawKey.trim().length > 10 ? rawKey : null;
+
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
-  : null;
+let clientInstance: SupabaseClient | null = null;
+
+if (isSupabaseConfigured && supabaseUrl && supabaseAnonKey) {
+  try {
+    clientInstance = createClient(supabaseUrl, supabaseAnonKey);
+  } catch (err) {
+    console.error("Falha ao inicializar o SupabaseClient:", err);
+    clientInstance = null;
+  }
+}
+
+export const supabase: SupabaseClient | null = clientInstance;
 
 /**
  * Real Supabase Storage Upload
