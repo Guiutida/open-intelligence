@@ -83,15 +83,19 @@ function PublicPage() {
   const [info, setInfo] = useState<StudioInfo>(defaultInfo);
 
   useEffect(() => {
-    getServices().then((data) => {
-      setServices(data);
-      setLoadingServices(false);
-    });
-    getProfessionals().then((data) => {
-      setProfessionals(data);
-      setLoadingPros(false);
-    });
-    getStudioSettings().then(setInfo);
+    getServices()
+      .then((data) => setServices(data))
+      .catch((err) => console.error("Erro ao buscar serviços:", err))
+      .finally(() => setLoadingServices(false));
+
+    getProfessionals()
+      .then((data) => setProfessionals(data))
+      .catch((err) => console.error("Erro ao buscar profissionais:", err))
+      .finally(() => setLoadingPros(false));
+
+    getStudioSettings()
+      .then((data) => setInfo(data))
+      .catch((err) => console.error("Erro ao buscar configurações:", err));
   }, []);
 
   return (
