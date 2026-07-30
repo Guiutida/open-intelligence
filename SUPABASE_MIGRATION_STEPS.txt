@@ -1,0 +1,76 @@
+PASSO A PASSO: Aplicar migration e migrar imagens (Supabase)
+
+Resumo: cria tabela `studios`, adiciona `studio_id` às tabelas principais e migra imagens em Base64 para Supabase Storage.
+
+Pré-requisitos
+- Ter acesso com privilégios (service role / DB owner) ao Postgres usado pelo Supabase.
+- Node.js + npm instalados.
+- Chave SUPABASE_SERVICE_ROLE_KEY (não compartilhar) e DATABASE_URL.
+- Fazer backup do banco se houver dados importantes.
+
+1) Instalar dependências locais
+- No terminal do projeto (PowerShell):
+  npm install pg @supabase/supabase-js
+
+2) Aplicar migration (recomendado: usar script Node criado)
+- Com backfill (cria um studio e atualiza rows existentes):
+  $env:DATABASE_URL = "postgres://user:pass@host:5432/db"
+  $env:BACKFILL_OWNER_UID = "<OWNER_AUTH_UID>"
+  node .\scripts\run_migration_backfill.js
+
+- Somente aplicar schema (sem backfill):
+  $env:DATABASE_URL = "postgres://user:pass@host:5432/db"
+  node .\scripts\run_migration_backfill.js
+
+Alternativa (psql):
+  psql "postgres://user:pass@host:5432/db" -f ".\\supabase\\migrations\\001_create_studios_and_backfill.sql"
+
+Alternativa (Supabase UI):
+- Project → SQL Editor → Cole o conteúdo de supabase/migrations/001_create_studios_and_backfill.sql → Run.
+
+3) Criar bucket no Supabase Storage
+- Acesse Supabase Console → Storage → New bucket
+- Nome sugerido: studio-media
+- Defina política de acesso pública conforme necessidade (public URL simplifica uso no frontend)
+
+4) Migrar imagens Base64 → Storage (DRY RUN primeiro)
+- Simulação (apenas log):
+  $env:SUPABASE_URL="https://<your-project>.supabase.co"
+  $env:SUPABASE_SERVICE_ROLE_KEY="<service-role-key>"
+  $env:DRY_RUN="true"
+  node .\scripts\migrate_base64_to_storage.js
+
+- Execução real:
+  Remove a variável DRY_RUN ou defina DRY_RUN="false":
+  $env:DRY_RUN="false"
+  node .\scripts\migrate_base64_to_storage.js
+
+Opções úteis:
+- BATCH_SIZE: número de rows por execução (ex.: BATCH_SIZE=200)
+- TABLES: lista separada por vírgula (ex.: TABLES=professionals,clients)
+
+5) Verificações pós-migração
+- Verificar studios criados:
+  SELECT * FROM public.studios LIMIT 5;
+- Verificar se restaram imagens em Base64:
+  SELECT COUNT(*) FROM public.professionals WHERE avatar ILIKE 'data:%';
+  SELECT COUNT(*) FROM public.clients WHERE avatar ILIKE 'data:%';
+  SELECT COUNT(*) FROM public.studio_settings WHERE value ILIKE 'data:%';
+- Verificar URLs atualizados nas tabelas.
+
+6) Ajustes frontend
+- Confirmar VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY continuam válidos.
+- Remover funcionalidades que dependem de Base64 se não forem mais necessárias.
+
+7) Segurança e limpeza
+- Não exponha SUPABASE_SERVICE_ROLE_KEY no frontend.
+- Depois de validar migração, considere remover dados Base64 antigos se quiser economizar espaço (somente após backup).
+
+Rollback
+- Restaure backup do banco se necessário.
+
+Observações finais
+- Execute scripts em ambiente confiável (máquina local ou runner de CI privado).
+- Faça DRY_RUN e revise logs antes de executar a operação real.
+
+Se quiser, posso gerar um script para rodar a migração em lotes contínuos até zerar todas as entradas Base64.
