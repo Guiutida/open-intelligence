@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { Upload, Save, Clock, MessageCircle, QrCode, Palette, Bell, Building2 } from "lucide-react";
 
 import { PageShell } from "@/components/page-shell";
+import { WhatsappFabView } from "@/components/whatsapp-fab";
+import { useStudioSettings, type FabStyle } from "@/lib/studio-settings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -66,6 +68,133 @@ function SwitchRow({
       </div>
       <Switch defaultChecked={defaultChecked} />
     </div>
+  );
+}
+
+const fabStyles: { value: FabStyle; label: string; swatch: string }[] = [
+  { value: "whatsapp", label: "Verde WhatsApp", swatch: "bg-[#25D366]" },
+  { value: "gold", label: "Dourado", swatch: "bg-gold" },
+  { value: "blush", label: "Rosa claro", swatch: "bg-blush" },
+  { value: "dark", label: "Preto", swatch: "bg-foreground" },
+];
+
+function FloatingButtonCard() {
+  const { settings, update } = useStudioSettings();
+
+  return (
+    <Card className="rounded-2xl">
+      <CardHeader>
+        <CardTitle className="text-lg">Botão flutuante de conversa</CardTitle>
+        <CardDescription>
+          Exibe um atalho de WhatsApp em todas as telas da página pública. Personalize e veja o
+          resultado ao vivo.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="grid gap-5">
+        <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium">Mostrar botão na página pública</p>
+            <p className="text-xs text-muted-foreground">
+              Suas clientes falam com você em um toque.
+            </p>
+          </div>
+          <Switch
+            checked={settings.fabEnabled}
+            onCheckedChange={(v) => update({ fabEnabled: v })}
+          />
+        </div>
+
+        {settings.fabEnabled ? (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label>Número do WhatsApp</Label>
+                <Input
+                  className="rounded-xl"
+                  value={settings.fabPhone}
+                  onChange={(e) => update({ fabPhone: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Texto do botão</Label>
+                <Input
+                  className="rounded-xl"
+                  value={settings.fabLabel}
+                  placeholder="Fale com a gente"
+                  onChange={(e) => update({ fabLabel: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Mensagem inicial da cliente</Label>
+              <Textarea
+                className="rounded-xl"
+                value={settings.fabMessage}
+                onChange={(e) => update({ fabMessage: e.target.value })}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label>Posição na tela</Label>
+                <Select
+                  value={settings.fabPosition}
+                  onValueChange={(v) => update({ fabPosition: v as "left" | "right" })}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="right">Canto inferior direito</SelectItem>
+                    <SelectItem value="left">Canto inferior esquerdo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Cor do botão</Label>
+                <div className="flex flex-wrap gap-2">
+                  {fabStyles.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => update({ fabStyle: s.value })}
+                      title={s.label}
+                      aria-label={s.label}
+                      className={`size-9 rounded-full ring-offset-2 ring-offset-background transition ${s.swatch} ${
+                        settings.fabStyle === s.value ? "ring-2 ring-gold" : "hover:scale-105"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Mostrar texto ao lado do ícone</p>
+                <p className="text-xs text-muted-foreground">
+                  Desative para um botão apenas com ícone.
+                </p>
+              </div>
+              <Switch
+                checked={settings.fabShowLabel}
+                onCheckedChange={(v) => update({ fabShowLabel: v })}
+              />
+            </div>
+
+            <div className="rounded-xl border bg-muted/40 p-6">
+              <p className="mb-4 text-xs font-medium text-muted-foreground">Pré-visualização</p>
+              <div
+                className={`flex ${settings.fabPosition === "right" ? "justify-end" : "justify-start"}`}
+              >
+                <WhatsappFabView settings={settings} preview />
+              </div>
+            </div>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -176,7 +305,8 @@ function ConfiguracoesPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="whatsapp" className="mt-4">
+        <TabsContent value="whatsapp" className="mt-4 grid gap-4">
+          <FloatingButtonCard />
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg">Integração WhatsApp</CardTitle>

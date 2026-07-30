@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { brlExact, professionals, services, studio } from "@/lib/mock-data";
+import { WhatsappFab } from "@/components/whatsapp-fab";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -296,6 +297,8 @@ function PublicPage() {
       <footer className="border-t py-8 text-center text-sm text-muted-foreground">
         © 2026 {studio.name} · {studio.address}
       </footer>
+
+      <WhatsappFab />
     </div>
   );
 }
