@@ -211,13 +211,13 @@ function PublicPage() {
                 className="absolute inset-0 z-10"
                 aria-label="Abrir localização no Google Maps"
               />
-              <div className="relative h-[260px] w-full overflow-hidden sm:h-[320px]">
-                <img
-                  src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&q=75"
-                  alt="Mapa estilizado da região dos Jardins em São Paulo"
-                  className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
+                <div className="relative h-[260px] w-full overflow-hidden sm:h-[320px]">
+                  <img
+                    src="https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=75"
+                    alt="Rua movimentada nos Jardins, São Paulo"
+                    className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div>
