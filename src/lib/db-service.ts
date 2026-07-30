@@ -16,12 +16,91 @@ function checkSupabaseConnected() {
   return supabase;
 }
 
+export type StudioRecord = {
+  id: string;
+  slug: string;
+  name: string;
+  subscription_status: string;
+  subscription_plan: string;
+};
+
+/**
+ * Garante e busca a conta do Studio Júlia Gatti no banco de dados
+ */
+export async function ensureJuliaGattiStudioInDB(): Promise<StudioRecord> {
+  const client = checkSupabaseConnected();
+
+  // 1. Busca se já existe pelo slug
+  const { data: existing } = await client
+    .from("studios")
+    .select("id, slug, name, subscription_status, subscription_plan")
+    .eq("slug", "julia-gatti")
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return existing[0] as StudioRecord;
+  }
+
+  // 2. Se não existir, cria a conta oficial do Studio Júlia Gatti
+  const { data: newStudio, error } = await client
+    .from("studios")
+    .insert([
+      {
+        slug: "julia-gatti",
+        name: "Studio Júlia Gatti",
+        subscription_status: "active",
+        subscription_plan: "pro",
+      },
+    ])
+    .select()
+    .single();
+
+  if (!error && newStudio) {
+    return newStudio as StudioRecord;
+  }
+
+  return {
+    id: "default-julia-gatti-id",
+    slug: "julia-gatti",
+    name: "Studio Júlia Gatti",
+    subscription_status: "active",
+    subscription_plan: "pro",
+  };
+}
+
+/**
+ * Busca estúdio por slug
+ */
+export async function getStudioBySlug(slug: string): Promise<StudioRecord> {
+  const client = checkSupabaseConnected();
+  const { data, error } = await client
+    .from("studios")
+    .select("id, slug, name, subscription_status, subscription_plan")
+    .eq("slug", slug)
+    .single();
+
+  if (error || !data) {
+    if (slug === "julia-gatti") {
+      return await ensureJuliaGattiStudioInDB();
+    }
+    throw new Error(`Estúdio '${slug}' não foi encontrado.`);
+  }
+
+  return data as StudioRecord;
+}
+
 // ----------------------------------------------------
 // SERVIÇOS
 // ----------------------------------------------------
-export async function getServices(): Promise<Service[]> {
+export async function getServices(studioId?: string): Promise<Service[]> {
   const client = checkSupabaseConnected();
-  const { data, error } = await client.from("services").select("*").eq("active", true);
+  let query = client.from("services").select("*").eq("active", true);
+
+  if (studioId) {
+    query = query.eq("studio_id", studioId);
+  }
+
+  const { data, error } = await query;
   if (error) {
     console.error("Erro ao buscar serviços no Supabase:", error);
     throw new Error(`Erro ao buscar serviços: ${error.message}`);
@@ -36,11 +115,20 @@ export async function getServices(): Promise<Service[]> {
   }));
 }
 
-export async function createService(serviceData: Omit<Service, "id">): Promise<Service> {
+export async function createService(serviceData: Omit<Service, "id"> & { studioId?: string }): Promise<Service> {
   const client = checkSupabaseConnected();
   const { data, error } = await client
     .from("services")
-    .insert([serviceData])
+    .insert([
+      {
+        name: serviceData.name,
+        price: serviceData.price,
+        duration: serviceData.duration,
+        color: serviceData.color,
+        description: serviceData.description,
+        studio_id: serviceData.studioId || null,
+      },
+    ])
     .select()
     .single();
 
@@ -82,13 +170,15 @@ export async function deleteService(id: string): Promise<boolean> {
 // ----------------------------------------------------
 // PROFISSIONAIS
 // ----------------------------------------------------
-export async function getProfessionals(): Promise<Professional[]> {
+export async function getProfessionals(studioId?: string): Promise<Professional[]> {
   const client = checkSupabaseConnected();
-  const { data, error } = await client
-    .from("professionals")
-    .select("*")
-    .eq("active", true)
-    .order("created_at", { ascending: true });
+  let query = client.from("professionals").select("*").eq("active", true).order("created_at", { ascending: true });
+
+  if (studioId) {
+    query = query.eq("studio_id", studioId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Erro ao buscar profissionais no Supabase:", error);
@@ -104,7 +194,7 @@ export async function getProfessionals(): Promise<Professional[]> {
   }));
 }
 
-export async function createProfessional(params: Omit<Professional, "id">): Promise<Professional> {
+export async function createProfessional(params: Omit<Professional, "id"> & { studioId?: string }): Promise<Professional> {
   const client = checkSupabaseConnected();
   const { data, error } = await client
     .from("professionals")
@@ -115,6 +205,7 @@ export async function createProfessional(params: Omit<Professional, "id">): Prom
         avatar: params.avatar || null,
         rating: params.rating || 5.0,
         active: true,
+        studio_id: params.studioId || null,
       },
     ])
     .select()
@@ -167,9 +258,15 @@ export async function deleteProfessional(id: string): Promise<boolean> {
 // ----------------------------------------------------
 // CLIENTES
 // ----------------------------------------------------
-export async function getClients(): Promise<Client[]> {
+export async function getClients(studioId?: string): Promise<Client[]> {
   const client = checkSupabaseConnected();
-  const { data, error } = await client.from("clients").select("*").order("created_at", { ascending: false });
+  let query = client.from("clients").select("*").order("created_at", { ascending: false });
+
+  if (studioId) {
+    query = query.eq("studio_id", studioId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Erro ao buscar clientes no Supabase:", error);
@@ -196,9 +293,9 @@ export async function getClients(): Promise<Client[]> {
 // ----------------------------------------------------
 // AGENDAMENTOS
 // ----------------------------------------------------
-export async function getAppointments(): Promise<Appointment[]> {
+export async function getAppointments(studioId?: string): Promise<Appointment[]> {
   const client = checkSupabaseConnected();
-  const { data, error } = await client
+  let query = client
     .from("appointments")
     .select(`
       *,
@@ -206,6 +303,12 @@ export async function getAppointments(): Promise<Appointment[]> {
       professionals ( name )
     `)
     .order("date", { ascending: true });
+
+  if (studioId) {
+    query = query.eq("studio_id", studioId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Erro ao buscar agendamentos no Supabase:", error);
@@ -243,6 +346,7 @@ export type CreateAppointmentParams = {
   clientPhone: string;
   clientEmail?: string;
   notes?: string;
+  studioId?: string;
 };
 
 const isUUID = (str?: string) =>
@@ -257,11 +361,16 @@ export async function createAppointment(
   // 1. Criar ou buscar cliente existente por telefone
   let clientId: string | null = null;
   try {
-    const { data: existingClients } = await client
+    let clientQuery = client
       .from("clients")
       .select("id")
-      .eq("phone", params.clientPhone)
-      .limit(1);
+      .eq("phone", params.clientPhone);
+
+    if (params.studioId) {
+      clientQuery = clientQuery.eq("studio_id", params.studioId);
+    }
+
+    const { data: existingClients } = await clientQuery.limit(1);
 
     if (existingClients && existingClients.length > 0) {
       clientId = existingClients[0].id;
@@ -274,6 +383,7 @@ export async function createAppointment(
             phone: params.clientPhone,
             email: params.clientEmail || null,
             tag: "Nova",
+            studio_id: params.studioId || null,
           },
         ])
         .select()
@@ -304,6 +414,7 @@ export async function createAppointment(
         price: params.price,
         status: initialStatus,
         notes: params.notes || null,
+        studio_id: params.studioId || null,
       },
     ])
     .select()
@@ -389,9 +500,15 @@ const defaultStudioInfo: StudioInfo = {
   ],
 };
 
-export async function getStudioSettings(): Promise<StudioInfo> {
+export async function getStudioSettings(studioId?: string): Promise<StudioInfo> {
   const client = checkSupabaseConnected();
-  const { data, error } = await client.from("studio_settings").select("key, value");
+  let query = client.from("studio_settings").select("key, value");
+
+  if (studioId) {
+    query = query.eq("studio_id", studioId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Erro ao carregar studio_settings do Supabase:", error);
@@ -423,11 +540,11 @@ export async function getStudioSettings(): Promise<StudioInfo> {
   return defaultStudioInfo;
 }
 
-export async function saveStudioSetting(key: string, value: string): Promise<void> {
+export async function saveStudioSetting(key: string, value: string, studioId?: string): Promise<void> {
   const client = checkSupabaseConnected();
   const { error } = await client
     .from("studio_settings")
-    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    .upsert({ key, value, studio_id: studioId || null, updated_at: new Date().toISOString() }, { onConflict: "key" });
 
   if (error) {
     console.error("Erro ao salvar studio_setting no Supabase:", error);

@@ -24,6 +24,7 @@ import { Route as DashboardConfiguracoesRouteImport } from './routes/dashboard/c
 import { Route as DashboardEquipeRouteImport } from './routes/dashboard/equipe'
 import { Route as DashboardFinanceiroRouteImport } from './routes/dashboard/financeiro'
 import { Route as DashboardServicosRouteImport } from './routes/dashboard/servicos'
+import { Route as SStudioSlugAgendarRouteImport } from './routes/s/$studioSlug/agendar'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -100,6 +101,11 @@ const DashboardServicosRoute = DashboardServicosRouteImport.update({
   path: '/servicos',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const SStudioSlugAgendarRoute = SStudioSlugAgendarRouteImport.update({
+  id: '/s/$studioSlug/agendar',
+  path: '/s/$studioSlug/agendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/financeiro': typeof DashboardFinanceiroRoute
   '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/s/$studioSlug/agendar': typeof SStudioSlugAgendarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/dashboard/financeiro': typeof DashboardFinanceiroRoute
   '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/s/$studioSlug/agendar': typeof SStudioSlugAgendarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/dashboard/financeiro': typeof DashboardFinanceiroRoute
   '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/s/$studioSlug/agendar': typeof SStudioSlugAgendarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/dashboard/financeiro'
     | '/dashboard/servicos'
     | '/dashboard/'
+    | '/s/$studioSlug/agendar'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/dashboard/financeiro'
     | '/dashboard/servicos'
     | '/dashboard'
+    | '/s/$studioSlug/agendar'
   id:
     | '__root__'
     | '/'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/dashboard/financeiro'
     | '/dashboard/servicos'
     | '/dashboard/'
+    | '/s/$studioSlug/agendar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
+  SStudioSlugAgendarRoute: typeof SStudioSlugAgendarRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -322,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardServicosRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/s/$studioSlug/agendar': {
+      id: '/s/$studioSlug/agendar'
+      path: '/s/$studioSlug/agendar'
+      fullPath: '/s/$studioSlug/agendar'
+      preLoaderRoute: typeof SStudioSlugAgendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -359,6 +379,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
+  SStudioSlugAgendarRoute: SStudioSlugAgendarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
