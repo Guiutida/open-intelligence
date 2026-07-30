@@ -15,6 +15,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardAgendaRouteImport } from './routes/dashboard/agenda'
 import { Route as DashboardAgendamentosRouteImport } from './routes/dashboard/agendamentos'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard/clientes'
+import { Route as DashboardServicosRouteImport } from './routes/dashboard/servicos'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const DashboardClientesRoute = DashboardClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardServicosRoute = DashboardServicosRouteImport.update({
+  id: '/servicos',
+  path: '/servicos',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
@@ -79,6 +88,7 @@ export interface FileRouteTypes {
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
+    | '/dashboard/servicos'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -86,6 +96,7 @@ export interface FileRouteTypes {
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
+    | '/dashboard/servicos'
     | '/dashboard'
   id:
     | '__root__'
@@ -94,6 +105,7 @@ export interface FileRouteTypes {
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
+    | '/dashboard/servicos'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
@@ -146,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardClientesRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/servicos': {
+      id: '/dashboard/servicos'
+      path: '/servicos'
+      fullPath: '/dashboard/servicos'
+      preLoaderRoute: typeof DashboardServicosRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
   }
 }
 
@@ -153,6 +172,7 @@ interface DashboardRouteRouteChildren {
   DashboardAgendaRoute: typeof DashboardAgendaRoute
   DashboardAgendamentosRoute: typeof DashboardAgendamentosRoute
   DashboardClientesRoute: typeof DashboardClientesRoute
+  DashboardServicosRoute: typeof DashboardServicosRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
@@ -160,6 +180,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardAgendaRoute: DashboardAgendaRoute,
   DashboardAgendamentosRoute: DashboardAgendamentosRoute,
   DashboardClientesRoute: DashboardClientesRoute,
+  DashboardServicosRoute: DashboardServicosRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
