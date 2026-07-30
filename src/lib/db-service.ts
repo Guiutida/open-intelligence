@@ -24,13 +24,72 @@ export type StudioRecord = {
   subscription_plan: string;
 };
 
+export const defaultLashServices: Omit<Service, "id">[] = [
+  {
+    name: "Volume Brasileiro (Cílios YY)",
+    price: 190,
+    duration: 130,
+    color: "var(--gold)",
+    description: "Aplicação em formato Y para um olhar marcante, volumoso e super leve.",
+  },
+  {
+    name: "Volume Russo Artesanal",
+    price: 240,
+    duration: 150,
+    color: "var(--blush-deep)",
+    description: "Fans artesanais de 3D a 6D para máximo preenchimento e glamour.",
+  },
+  {
+    name: "Clássico Fio a Fio",
+    price: 160,
+    duration: 120,
+    color: "var(--chart-3)",
+    description: "Aplicação de um fio sintético sobre cada cílio natural. Efeito rímel elegante.",
+  },
+  {
+    name: "Volume Híbrido",
+    price: 200,
+    duration: 130,
+    color: "var(--chart-2)",
+    description: "Mistura perfeita entre o Fio a Fio e Volume Russo para efeito texturizado.",
+  },
+  {
+    name: "Lash Lifting + Nutrição com Keratina",
+    price: 140,
+    duration: 60,
+    color: "var(--chart-5)",
+    description: "Curvatura e tingimento dos cílios naturais promovendo olhar levantado por até 8 semanas.",
+  },
+  {
+    name: "Manutenção de Extensão (Até 20 dias)",
+    price: 120,
+    duration: 90,
+    color: "var(--chart-4)",
+    description: "Higienização profunda e reposição de fios para clientes do studio.",
+  },
+];
+
+export const defaultLashProfessionals: Omit<Professional, "id">[] = [
+  {
+    name: "Júlia Gatti",
+    role: "Master Lash Designer & Fundadora",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
+    rating: 5.0,
+  },
+  {
+    name: "Driely Santos",
+    role: "Lash Designer Specialist",
+    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&q=80",
+    rating: 4.9,
+  },
+];
+
 /**
  * Garante e busca a conta do Studio Júlia Gatti no banco de dados
  */
 export async function ensureJuliaGattiStudioInDB(): Promise<StudioRecord> {
   const client = checkSupabaseConnected();
 
-  // 1. Busca se já existe pelo slug
   const { data: existing } = await client
     .from("studios")
     .select("id, slug, name, subscription_status, subscription_plan")
@@ -41,7 +100,6 @@ export async function ensureJuliaGattiStudioInDB(): Promise<StudioRecord> {
     return existing[0] as StudioRecord;
   }
 
-  // 2. Se não existir, cria a conta oficial do Studio Júlia Gatti
   const { data: newStudio, error } = await client
     .from("studios")
     .insert([
@@ -90,21 +148,47 @@ export async function getStudioBySlug(slug: string): Promise<StudioRecord> {
 }
 
 // ----------------------------------------------------
-// SERVIÇOS
+// SERVIÇOS DE EXTENSÃO DE CÍLIOS
 // ----------------------------------------------------
 export async function getServices(studioId?: string): Promise<Service[]> {
   const client = checkSupabaseConnected();
-  let query = client.from("services").select("*").eq("active", true);
+  let targetStudioId = studioId;
 
-  if (studioId) {
-    query = query.eq("studio_id", studioId);
+  if (!targetStudioId) {
+    const studioRec = await ensureJuliaGattiStudioInDB();
+    targetStudioId = studioRec.id;
   }
 
-  const { data, error } = await query;
+  let { data, error } = await client.from("services").select("*").eq("active", true);
+
   if (error) {
     console.error("Erro ao buscar serviços no Supabase:", error);
     throw new Error(`Erro ao buscar serviços: ${error.message}`);
   }
+
+  // Se os serviços no banco estiverem vazios, auto-cadastra os serviços de cílios da Júlia Gatti no Supabase
+  if (!data || data.length === 0) {
+    console.log("Auto-cadastrando serviços de extensão de cílios da Júlia Gatti no Supabase...");
+    const toInsert = defaultLashServices.map((s) => ({
+      name: s.name,
+      price: s.price,
+      duration: s.duration,
+      color: s.color,
+      description: s.description,
+      active: true,
+      studio_id: targetStudioId,
+    }));
+
+    const { data: inserted, error: insertErr } = await client
+      .from("services")
+      .insert(toInsert)
+      .select();
+
+    if (!insertErr && inserted && inserted.length > 0) {
+      data = inserted;
+    }
+  }
+
   return (data || []).map((s) => ({
     id: s.id,
     name: s.name,
@@ -117,6 +201,13 @@ export async function getServices(studioId?: string): Promise<Service[]> {
 
 export async function createService(serviceData: Omit<Service, "id"> & { studioId?: string }): Promise<Service> {
   const client = checkSupabaseConnected();
+  let targetStudioId = serviceData.studioId;
+
+  if (!targetStudioId) {
+    const studioRec = await ensureJuliaGattiStudioInDB();
+    targetStudioId = studioRec.id;
+  }
+
   const { data, error } = await client
     .from("services")
     .insert([
@@ -126,7 +217,7 @@ export async function createService(serviceData: Omit<Service, "id"> & { studioI
         duration: serviceData.duration,
         color: serviceData.color,
         description: serviceData.description,
-        studio_id: serviceData.studioId || null,
+        studio_id: targetStudioId,
       },
     ])
     .select()
@@ -168,21 +259,44 @@ export async function deleteService(id: string): Promise<boolean> {
 }
 
 // ----------------------------------------------------
-// PROFISSIONAIS
+// PROFISSIONAIS DA EQUIPE
 // ----------------------------------------------------
 export async function getProfessionals(studioId?: string): Promise<Professional[]> {
   const client = checkSupabaseConnected();
-  let query = client.from("professionals").select("*").eq("active", true).order("created_at", { ascending: true });
+  let targetStudioId = studioId;
 
-  if (studioId) {
-    query = query.eq("studio_id", studioId);
+  if (!targetStudioId) {
+    const studioRec = await ensureJuliaGattiStudioInDB();
+    targetStudioId = studioRec.id;
   }
 
-  const { data, error } = await query;
+  let { data, error } = await client.from("professionals").select("*").eq("active", true).order("created_at", { ascending: true });
 
   if (error) {
     console.error("Erro ao buscar profissionais no Supabase:", error);
     throw new Error(`Erro ao buscar profissionais: ${error.message}`);
+  }
+
+  // Auto-cadastra profissionais no Supabase se a tabela estiver vazia
+  if (!data || data.length === 0) {
+    console.log("Auto-cadastrando equipe da Júlia Gatti no Supabase...");
+    const toInsert = defaultLashProfessionals.map((p) => ({
+      name: p.name,
+      role: p.role,
+      avatar: p.avatar,
+      rating: p.rating,
+      active: true,
+      studio_id: targetStudioId,
+    }));
+
+    const { data: inserted, error: insertErr } = await client
+      .from("professionals")
+      .insert(toInsert)
+      .select();
+
+    if (!insertErr && inserted && inserted.length > 0) {
+      data = inserted;
+    }
   }
 
   return (data || []).map((p) => ({
@@ -196,6 +310,13 @@ export async function getProfessionals(studioId?: string): Promise<Professional[
 
 export async function createProfessional(params: Omit<Professional, "id"> & { studioId?: string }): Promise<Professional> {
   const client = checkSupabaseConnected();
+  let targetStudioId = params.studioId;
+
+  if (!targetStudioId) {
+    const studioRec = await ensureJuliaGattiStudioInDB();
+    targetStudioId = studioRec.id;
+  }
+
   const { data, error } = await client
     .from("professionals")
     .insert([
@@ -205,7 +326,7 @@ export async function createProfessional(params: Omit<Professional, "id"> & { st
         avatar: params.avatar || null,
         rating: params.rating || 5.0,
         active: true,
-        studio_id: params.studioId || null,
+        studio_id: targetStudioId,
       },
     ])
     .select()
@@ -357,20 +478,21 @@ export async function createAppointment(
   initialStatus: string = "confirmado"
 ): Promise<Appointment> {
   const client = checkSupabaseConnected();
+  let targetStudioId = params.studioId;
+
+  if (!targetStudioId) {
+    const studioRec = await ensureJuliaGattiStudioInDB();
+    targetStudioId = studioRec.id;
+  }
 
   // 1. Criar ou buscar cliente existente por telefone
   let clientId: string | null = null;
   try {
-    let clientQuery = client
+    const { data: existingClients } = await client
       .from("clients")
       .select("id")
-      .eq("phone", params.clientPhone);
-
-    if (params.studioId) {
-      clientQuery = clientQuery.eq("studio_id", params.studioId);
-    }
-
-    const { data: existingClients } = await clientQuery.limit(1);
+      .eq("phone", params.clientPhone)
+      .limit(1);
 
     if (existingClients && existingClients.length > 0) {
       clientId = existingClients[0].id;
@@ -383,7 +505,7 @@ export async function createAppointment(
             phone: params.clientPhone,
             email: params.clientEmail || null,
             tag: "Nova",
-            studio_id: params.studioId || null,
+            studio_id: targetStudioId,
           },
         ])
         .select()
@@ -414,7 +536,7 @@ export async function createAppointment(
         price: params.price,
         status: initialStatus,
         notes: params.notes || null,
-        studio_id: params.studioId || null,
+        studio_id: targetStudioId,
       },
     ])
     .select()
