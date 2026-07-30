@@ -69,11 +69,67 @@ ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.studio_settings ENABLE ROW LEVEL SECURITY;
 
--- Políticas: acesso total público (sistema sem autenticação por ora)
-CREATE POLICY "acesso_total_services" ON public.services FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "acesso_total_professionals" ON public.professionals FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "acesso_total_appointments" ON public.appointments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "acesso_total_clients" ON public.clients FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "acesso_total_studio_settings" ON public.studio_settings FOR ALL USING (true) WITH CHECK (true);
+-- 0) Criar tabela de studios (tenants) para suportar multi-tenancy
+CREATE TABLE IF NOT EXISTS public.studios (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text UNIQUE,
+  name text,
+  owner_uid uuid REFERENCES auth.users(id),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
--- NOTA: Não há seed data. Configure tudo pelo painel administrativo.
+-- 1) Adicionar coluna studio_id (nullable por enquanto) para migrar dados existentes
+ALTER TABLE public.services ADD COLUMN IF NOT EXISTS studio_id uuid REFERENCES public.studios(id);
+ALTER TABLE public.professionals ADD COLUMN IF NOT EXISTS studio_id uuid REFERENCES public.studios(id);
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS studio_id uuid REFERENCES public.studios(id);
+ALTER TABLE public.appointments ADD COLUMN IF NOT EXISTS studio_id uuid REFERENCES public.studios(id);
+ALTER TABLE public.studio_settings ADD COLUMN IF NOT EXISTS studio_id uuid REFERENCES public.studios(id);
+
+-- IMPORTANT: Backfill existente (ex.: criar um studio padrão e atualizar rows existentes)
+-- SQL exemplo (executar manualmente no Supabase):
+-- INSERT INTO public.studios (slug, name, owner_uid) VALUES ('default', 'Studio Padrão', '<OWNER_AUTH_UID>');
+-- UPDATE public.services SET studio_id = '<THE_NEW_STUDIO_ID>' WHERE studio_id IS NULL;
+-- UPDATE public.professionals SET studio_id = '<THE_NEW_STUDIO_ID>' WHERE studio_id IS NULL;
+-- UPDATE public.clients SET studio_id = '<THE_NEW_STUDIO_ID>' WHERE studio_id IS NULL;
+-- UPDATE public.appointments SET studio_id = '<THE_NEW_STUDIO_ID>' WHERE studio_id IS NULL;
+-- UPDATE public.studio_settings SET studio_id = '<THE_NEW_STUDIO_ID>' WHERE studio_id IS NULL;
+
+-- 2) Políticas RLS: permitir SELECT público (página pública/landing), mas restringir operações de escrita (INSERT/UPDATE/DELETE) ao owner do studio
+
+-- SERVICES: SELECT público
+CREATE POLICY "public_select_services" ON public.services FOR SELECT USING (true);
+
+-- SERVICES: chỉ owner pode inserir/atualizar/deletar (e também SELECT/USING garante leitura para owner)
+CREATE POLICY "owners_manage_services" ON public.services FOR ALL
+  USING ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = services.studio_id AND s.owner_uid = auth.uid()) )
+  WITH CHECK ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = services.studio_id AND s.owner_uid = auth.uid()) );
+
+-- PROFESSIONALS
+CREATE POLICY "public_select_professionals" ON public.professionals FOR SELECT USING (true);
+CREATE POLICY "owners_manage_professionals" ON public.professionals FOR ALL
+  USING ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = professionals.studio_id AND s.owner_uid = auth.uid()) )
+  WITH CHECK ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = professionals.studio_id AND s.owner_uid = auth.uid()) );
+
+-- CLIENTS: SELECT only for owners (sensitive)
+CREATE POLICY "owners_select_clients" ON public.clients FOR SELECT
+  USING ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = clients.studio_id AND s.owner_uid = auth.uid()) );
+CREATE POLICY "owners_manage_clients" ON public.clients FOR ALL
+  USING ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = clients.studio_id AND s.owner_uid = auth.uid()) )
+  WITH CHECK ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = clients.studio_id AND s.owner_uid = auth.uid()) );
+
+-- APPOINTMENTS: public booking flow must INSERT appointments (clients unauthenticated).
+-- Strategy: allow INSERT into appointments for rows that have studio_id set AND do not set protected columns (e.g., status only owner can set)
+-- For now allow public INSERT but restrict UPDATE/DELETE to owners
+CREATE POLICY "public_insert_appointments" ON public.appointments FOR INSERT
+  WITH CHECK (true);
+CREATE POLICY "owners_manage_appointments" ON public.appointments FOR UPDATE, DELETE
+  USING ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = appointments.studio_id AND s.owner_uid = auth.uid()) )
+  WITH CHECK ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = appointments.studio_id AND s.owner_uid = auth.uid()) );
+
+-- STUDIO_SETTINGS: leitura pública (para renderizar landing), escrita apenas por owner
+CREATE POLICY "public_select_studio_settings" ON public.studio_settings FOR SELECT USING (true);
+CREATE POLICY "owners_manage_studio_settings" ON public.studio_settings FOR ALL
+  USING ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = studio_settings.studio_id AND s.owner_uid = auth.uid()) )
+  WITH CHECK ( EXISTS (SELECT 1 FROM public.studios s WHERE s.id = studio_settings.studio_id AND s.owner_uid = auth.uid()) );
+
+-- NOTA: ajustar políticas conforme necessário para permitir integração com backend/Workers (ex.: service role) usando jwt.claims or service_role key.

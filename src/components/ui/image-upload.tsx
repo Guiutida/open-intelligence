@@ -1,6 +1,7 @@
 import { useState, useRef, ChangeEvent, DragEvent } from "react";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 interface ImageUploadProps {
   value?: string;
@@ -21,7 +22,7 @@ export function ImageUpload({
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       alert("Por favor, selecione apenas arquivos de imagem (PNG, JPG, WebP, SVG).");
       return;
@@ -33,6 +34,30 @@ export function ImageUpload({
     }
 
     setLoading(true);
+
+    // When Supabase storage is configured, upload the file and return the public URL
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const safeName = file.name.replace(/\s+/g, "_");
+        const path = `studio-media/${Date.now()}_${safeName}`;
+        const { data, error } = await supabase.storage
+          .from("studio-media")
+          .upload(path, file, { cacheControl: "3600", upsert: false });
+
+        if (error) throw error;
+        const publicUrl = supabase.storage.from("studio-media").getPublicUrl(data.path).data.publicUrl;
+        if (publicUrl) onChange(publicUrl);
+      } catch (e) {
+        console.error("Erro ao enviar imagem para storage:", e);
+        alert("Erro ao enviar imagem. Tente novamente.");
+      } finally {
+        setLoading(false);
+      }
+
+      return;
+    }
+
+    // Fallback: convert to base64 (existing behavior)
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
