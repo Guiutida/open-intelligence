@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { brlExact, professionals, services, studio } from "@/lib/mock-data";
 import { WhatsappFab } from "@/components/whatsapp-fab";
+import { waLink } from "@/lib/studio-settings";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -99,11 +100,23 @@ function PublicPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    <Instagram className="size-4" /> {studio.instagram}
+                  <Button variant="outline" size="sm" className="rounded-full" asChild>
+                    <a
+                      href={`https://instagram.com/${studio.instagram.replace("@", "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Instagram className="size-4" /> {studio.instagram}
+                    </a>
                   </Button>
-                  <Button variant="outline" size="sm" className="rounded-full">
-                    <MessageCircle className="size-4" /> {studio.whatsapp}
+                  <Button variant="outline" size="sm" className="rounded-full" asChild>
+                    <a
+                      href={waLink(studio.whatsapp, "Oi! Vim pelo site do studio ✨")}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <MessageCircle className="size-4" /> {studio.whatsapp}
+                    </a>
                   </Button>
                 </div>
               </div>
@@ -196,15 +209,15 @@ function PublicPage() {
           <p className="text-sm text-muted-foreground">Venha nos visitar no coração dos Jardins.</p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-5">
+        <div className="grid items-stretch gap-4 lg:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.4 }}
-            className="lg:col-span-3"
+            className="h-full"
           >
-            <Card className="group relative overflow-hidden rounded-2xl">
+            <Card className="group relative h-full overflow-hidden rounded-2xl p-0">
               <a
                 href={studio.mapsUrl}
                 target="_blank"
@@ -212,7 +225,7 @@ function PublicPage() {
                 className="absolute inset-0 z-10"
                 aria-label="Abrir localização no Google Maps"
               />
-                <div className="relative h-[260px] w-full overflow-hidden sm:h-[320px]">
+                <div className="relative h-full min-h-[420px] w-full overflow-hidden">
                   <img
                     src="https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1200&q=75"
                     alt="Vista urbana da região dos Jardins, São Paulo"
@@ -243,7 +256,7 @@ function PublicPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="lg:col-span-2"
+            className="h-full"
           >
             <Card className="h-full rounded-2xl">
               <CardContent className="flex h-full flex-col p-5">
@@ -294,8 +307,36 @@ function PublicPage() {
         </Button>
       </section>
 
+      <section className="border-t bg-muted/30 px-4 py-14 sm:px-6">
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl border bg-background p-8 text-center shadow-sm sm:p-12">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+            <Sparkles className="size-3.5 text-gold" /> TecMash
+          </span>
+          <h2 className="text-display mt-4 text-3xl font-semibold sm:text-4xl">
+            Facilite agendamento com a TecMash
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+            Sistemas de agendamento online sob medida para studios, clínicas e salões. Sua agenda
+            cheia, sem trabalho manual.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Button size="lg" className="rounded-2xl px-8" asChild>
+              <a
+                href={waLink("(11) 90000-0000", "Olá TecMash! Quero um sistema de agendamento.")}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Quero para o meu negócio
+                <ArrowRight className="size-4" />
+              </a>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       <footer className="border-t py-8 text-center text-sm text-muted-foreground">
         © 2026 {studio.name} · {studio.address}
+        <span className="mt-1 block text-xs">Feito com ♥ pela TecMash</span>
       </footer>
 
       <WhatsappFab />
