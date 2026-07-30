@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ptBR } from "date-fns/locale";
 import {
@@ -12,8 +12,10 @@ import {
   PartyPopper,
   Loader2,
   MessageCircle,
+  Copy,
 } from "lucide-react";
 import { toast } from "sonner";
+import { createRealPixCharge, subscribeToAppointmentStatus, type PixPaymentPayload } from "@/lib/payment-service";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,7 +34,7 @@ import {
   type Service,
   type Appointment,
 } from "@/lib/mock-data";
-import { getServices, getProfessionals, getAppointments, createAppointment } from "@/lib/db-service";
+import { getServices, getProfessionals, getAppointments, createAppointment, updateAppointmentStatus } from "@/lib/db-service";
 
 type BookingSearch = {
   serviceId?: string;
@@ -61,7 +63,7 @@ export const Route = createFileRoute("/agendar")({
   component: BookingPage,
 });
 
-const steps = ["Serviço", "Profissional", "Data", "Horário", "Seus dados", "Resumo"];
+const steps = ["Serviço", "Profissional", "Data", "Horário", "Seus dados", "Resumo", "Pagamento"];
 const ALL_SLOTS = ["09:00", "10:30", "12:00", "14:00", "16:00", "17:30", "19:00"];
 
 function formatPhoneMask(v: string) {
@@ -116,6 +118,9 @@ function BookingPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
+  const [pendingAppt, setPendingAppt] = useState<Appointment | null>(null);
+  const [pixData, setPixData] = useState<PixPaymentPayload | null>(null);
+  const [loadingPix, setLoadingPix] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -208,7 +213,8 @@ function BookingPage() {
     if (!service || !pro || !date || !time) return;
     setConfirming(true);
     try {
-      await createAppointment({
+      // Criar agendamento em estado pendente para aguardar pagamento via PIX (mock/local)
+      const appt = await createAppointment({
         serviceId: service.id,
         serviceName: service.name,
         price: service.price,
@@ -220,9 +226,30 @@ function BookingPage() {
         clientName: form.name,
         clientPhone: form.phone,
         clientEmail: form.email,
-      });
-      setDone(true);
-      toast.success("Agendamento confirmado!", {
+      }, 'pendente');
+
+      setPendingAppt(appt);
+      setStep(steps.length - 1);
+
+      // Gerar cobrança PIX real no gateway / backend
+      setLoadingPix(true);
+      try {
+        const pix = await createRealPixCharge({
+          appointmentId: appt.id,
+          amount: service.price,
+          description: service.name,
+          clientName: form.name,
+          clientEmail: form.email,
+          clientPhone: form.phone,
+        });
+        setPixData(pix);
+      } catch (err) {
+        console.error("Erro ao gerar PIX:", err);
+      } finally {
+        setLoadingPix(false);
+      }
+
+      toast.success("Agendamento criado — faça o PIX para confirmar", {
         description: `${service?.name} · ${date?.toLocaleDateString("pt-BR")} às ${time}`,
       });
     } catch (error) {
@@ -232,6 +259,32 @@ function BookingPage() {
       setConfirming(false);
     }
   };
+
+  // Escuta o pagamento via Supabase Realtime / Webhook em tempo real
+  useEffect(() => {
+    if (!pendingAppt || step !== steps.length - 1 || done) return;
+
+    const handleConfirmed = () => {
+      setDone(true);
+      toast.success("Pagamento confirmado automaticamente pelo banco!");
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("Agendamento confirmado", {
+          body: `Seu horário em ${pendingAppt.date} às ${pendingAppt.time} foi confirmado.`,
+        });
+      }
+    };
+
+    // Inscreve no Supabase Realtime
+    const unsubscribe = subscribeToAppointmentStatus(pendingAppt.id, (newStatus) => {
+      if (newStatus === "confirmado") {
+        handleConfirmed();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [pendingAppt, step, done]);
 
   const cleanPhone = studio.whatsapp.replace(/\D/g, "");
   const whatsappMsg = encodeURIComponent(
@@ -545,6 +598,56 @@ function BookingPage() {
                         {brlExact(service?.price ?? 0)}
                       </span>
                     </p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {step === steps.length - 1 && (
+              <>
+                <h1 className="text-2xl font-semibold">Pagamento via PIX</h1>
+                <p className="mt-1 text-sm text-muted-foreground">Escaneie o QR Code ou copie a chave para pagar no aplicativo do seu banco.</p>
+                <Card className="mt-5 rounded-2xl">
+                  <CardContent className="p-6 text-center">
+                    <p className="mb-4 text-base">Total a pagar: <strong className="text-[#F87171] text-xl">{brlExact(service?.price ?? 0)}</strong></p>
+
+                    {loadingPix ? (
+                      <div className="py-12 flex flex-col items-center justify-center gap-3">
+                        <Loader2 className="size-8 animate-spin text-[#F87171]" />
+                        <p className="text-sm text-muted-foreground">Gerando cobrança PIX com o banco...</p>
+                      </div>
+                    ) : pixData ? (
+                      <>
+                        <div className="mx-auto mb-4 w-52 h-52 rounded-2xl border bg-white p-2 flex items-center justify-center shadow-sm">
+                          <img src={pixData.qrCodeBase64} alt="QR Code PIX" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="mb-5 max-w-sm mx-auto">
+                          <Label className="text-xs text-muted-foreground mb-1.5 block text-left font-medium">PIX Copia e Cola:</Label>
+                          <div className="flex items-center gap-2">
+                            <Input readOnly value={pixData.pixCopiaECola} className="text-xs font-mono h-10 rounded-xl bg-slate-50" />
+                            <Button
+                              size="sm"
+                              className="h-10 rounded-xl px-3 flex items-center gap-1.5"
+                              onClick={() => {
+                                navigator.clipboard.writeText(pixData.pixCopiaECola);
+                                toast.success("Chave PIX copiada para a área de transferência!");
+                              }}
+                            >
+                              <Copy className="size-4" /> Copiar
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    ) : null}
+
+                    <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-600 flex items-center justify-center gap-2 mb-4">
+                      <Loader2 className="size-4 animate-spin shrink-0" />
+                      <span>Aguardando notificação de pagamento do banco...</span>
+                    </div>
+
+                    <Button variant="outline" className="w-full h-11 rounded-2xl" asChild>
+                      <Link to="/">Cancelar e voltar ao início</Link>
+                    </Button>
                   </CardContent>
                 </Card>
               </>

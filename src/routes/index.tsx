@@ -110,7 +110,7 @@ function PublicPage() {
               asChild
             >
               <Link to="/dashboard">
-                <User className="size-4" /> Área do Cliente / Gestor
+              <User className="size-4" /> Área do Cliente
               </Link>
             </Button>
           </div>

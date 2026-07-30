@@ -1,7 +1,7 @@
 import { useState, useRef, ChangeEvent, DragEvent } from "react";
 import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured, uploadStudioAsset } from "@/lib/supabase";
 
 interface ImageUploadProps {
   value?: string;
@@ -38,37 +38,19 @@ export function ImageUpload({
     // When Supabase storage is configured, upload the file and return the public URL
     if (isSupabaseConfigured && supabase) {
       try {
-        const safeName = file.name.replace(/\s+/g, "_");
-        const path = `studio-media/${Date.now()}_${safeName}`;
-        const { data, error } = await supabase.storage
-          .from("studio-media")
-          .upload(path, file, { cacheControl: "3600", upsert: false });
-
-        if (error) throw error;
-        const publicUrl = supabase.storage.from("studio-media").getPublicUrl(data.path).data.publicUrl;
+        const publicUrl = await uploadStudioAsset(file, "studio-media");
         if (publicUrl) onChange(publicUrl);
-      } catch (e) {
+      } catch (e: any) {
         console.error("Erro ao enviar imagem para storage:", e);
-        alert("Erro ao enviar imagem. Tente novamente.");
+        alert(e?.message || "Erro ao enviar imagem. Tente novamente.");
       } finally {
         setLoading(false);
       }
-
       return;
     }
 
-    // Fallback: convert to base64 (existing behavior)
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      onChange(result);
-      setLoading(false);
-    };
-    reader.onerror = () => {
-      alert("Erro ao ler o arquivo de imagem.");
-      setLoading(false);
-    };
-    reader.readAsDataURL(file);
+    setLoading(false);
+    alert("Supabase não está configurado. Configure VITE_SUPABASE_URL para enviar imagens.");
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {

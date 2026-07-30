@@ -1,4 +1,3 @@
-
 /* eslint-disable */
 
 // @ts-nocheck
@@ -12,7 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgendarRouteImport } from './routes/agendar'
+import { Route as CadastrarRouteImport } from './routes/cadastrar'
 import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardAgendaRouteImport } from './routes/dashboard/agenda'
 import { Route as DashboardAgendamentosRouteImport } from './routes/dashboard/agendamentos'
@@ -32,9 +35,29 @@ const AgendarRoute = AgendarRouteImport.update({
   path: '/agendar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CadastrarRoute = CadastrarRouteImport.update({
+  id: '/cadastrar',
+  path: '/cadastrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRouteRoute = DashboardRouteRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -82,6 +105,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/agendar': typeof AgendarRoute
+  '/cadastrar': typeof CadastrarRoute
+  '/login': typeof LoginRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
@@ -94,6 +121,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
+  '/cadastrar': typeof CadastrarRoute
+  '/login': typeof LoginRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
@@ -108,6 +139,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/agendar': typeof AgendarRoute
+  '/cadastrar': typeof CadastrarRoute
+  '/login': typeof LoginRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
@@ -123,6 +158,10 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/agendar'
+    | '/cadastrar'
+    | '/login'
+    | '/privacidade'
+    | '/termos'
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
@@ -135,6 +174,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agendar'
+    | '/cadastrar'
+    | '/login'
+    | '/privacidade'
+    | '/termos'
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
@@ -148,6 +191,10 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/agendar'
+    | '/cadastrar'
+    | '/login'
+    | '/privacidade'
+    | '/termos'
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
@@ -162,6 +209,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
   AgendarRoute: typeof AgendarRoute
+  CadastrarRoute: typeof CadastrarRoute
+  LoginRoute: typeof LoginRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  TermosRoute: typeof TermosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -180,11 +231,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadastrar': {
+      id: '/cadastrar'
+      path: '/cadastrar'
+      fullPath: '/cadastrar'
+      preLoaderRoute: typeof CadastrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -276,6 +355,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
   AgendarRoute: AgendarRoute,
+  CadastrarRoute: CadastrarRoute,
+  LoginRoute: LoginRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  TermosRoute: TermosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

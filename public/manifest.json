@@ -1,0 +1,16 @@
+{
+  "short_name": "Agendamentos",
+  "name": "Sistema de Agendamento Online & Gestão SaaS",
+  "icons": [
+    {
+      "src": "/julia-gatti-logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#F87171",
+  "display": "standalone",
+  "orientation": "portrait"
+}

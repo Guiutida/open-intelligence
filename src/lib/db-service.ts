@@ -1,9 +1,5 @@
 import { supabase, isSupabaseConfigured } from "./supabase";
 import {
-  services as initialServices,
-  professionals as initialProfessionals,
-  clients as initialClients,
-  appointments as initialAppointments,
   type Service,
   type Professional,
   type Client,
@@ -11,169 +7,160 @@ import {
   type Status,
 } from "./mock-data";
 
-// Fallback in-memory storage (com persistência no localStorage para testes sem backend)
-const STORAGE_KEYS = {
-  SERVICES: "lumiere_services",
-  PROFESSIONALS: "lumiere_professionals",
-  CLIENTS: "lumiere_clients",
-  APPOINTMENTS: "lumiere_appointments",
-};
+export type { Service, Professional, Client, Appointment, Status };
 
-function getLocalData<T>(key: string, defaultData: T): T {
-  if (typeof window === "undefined") return defaultData;
-  try {
-    const item = localStorage.getItem(key);
-    return item ? JSON.parse(item) : defaultData;
-  } catch {
-    return defaultData;
+function checkSupabaseConnected() {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error("Supabase não está configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY nas variáveis de ambiente.");
   }
-}
-
-function setLocalData<T>(key: string, data: T): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (e) {
-    console.error("Erro ao salvar no localStorage", e);
-  }
+  return supabase;
 }
 
 // ----------------------------------------------------
 // SERVIÇOS
 // ----------------------------------------------------
 export async function getServices(): Promise<Service[]> {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.from("services").select("*").eq("active", true);
-    if (!error && data) {
-      return data.map((s) => ({
-        id: s.id,
-        name: s.name,
-        price: Number(s.price),
-        duration: Number(s.duration),
-        color: s.color || "var(--gold)",
-        description: s.description || "",
-      }));
-    }
-    return []; // Supabase configurado mas erro na query → vazio
+  const client = checkSupabaseConnected();
+  const { data, error } = await client.from("services").select("*").eq("active", true);
+  if (error) {
+    console.error("Erro ao buscar serviços no Supabase:", error);
+    throw new Error(`Erro ao buscar serviços: ${error.message}`);
   }
-  // Só usa mock quando Supabase NÃO está configurado (dev local sem banco)
-  return getLocalData<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
+  return (data || []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    price: Number(s.price),
+    duration: Number(s.duration),
+    color: s.color || "var(--gold)",
+    description: s.description || "",
+  }));
 }
 
 export async function createService(serviceData: Omit<Service, "id">): Promise<Service> {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from("services")
-      .insert([serviceData])
-      .select()
-      .single();
-    if (!error && data) {
-      return {
-        id: data.id,
-        name: data.name,
-        price: Number(data.price),
-        duration: Number(data.duration),
-        color: data.color,
-        description: data.description,
-      };
-    }
+  const client = checkSupabaseConnected();
+  const { data, error } = await client
+    .from("services")
+    .insert([serviceData])
+    .select()
+    .single();
+
+  if (error || !data) {
+    console.error("Erro ao criar serviço no Supabase:", error);
+    throw new Error(`Erro ao criar serviço: ${error?.message || "Registro não retornado."}`);
   }
 
-  const current = getLocalData<Service[]>(STORAGE_KEYS.SERVICES, initialServices);
-  const newService: Service = {
-    ...serviceData,
-    id: `s_${Date.now()}`,
+  return {
+    id: data.id,
+    name: data.name,
+    price: Number(data.price),
+    duration: Number(data.duration),
+    color: data.color,
+    description: data.description,
   };
-  const updated = [newService, ...current];
-  setLocalData(STORAGE_KEYS.SERVICES, updated);
-  return newService;
+}
+
+export async function updateService(id: string, serviceData: Partial<Service>): Promise<boolean> {
+  const client = checkSupabaseConnected();
+  const { error } = await client.from("services").update(serviceData).eq("id", id);
+  if (error) {
+    console.error("Erro ao atualizar serviço no Supabase:", error);
+    throw new Error(`Erro ao atualizar serviço: ${error.message}`);
+  }
+  return true;
+}
+
+export async function deleteService(id: string): Promise<boolean> {
+  const client = checkSupabaseConnected();
+  const { error } = await client.from("services").delete().eq("id", id);
+  if (error) {
+    console.error("Erro ao deletar serviço no Supabase:", error);
+    throw new Error(`Erro ao deletar serviço: ${error.message}`);
+  }
+  return true;
 }
 
 // ----------------------------------------------------
 // PROFISSIONAIS
 // ----------------------------------------------------
 export async function getProfessionals(): Promise<Professional[]> {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.from("professionals").select("*").eq("active", true).order("created_at", { ascending: true });
-    if (!error && data) {
-      return data.map((p) => ({
-        id: p.id,
-        name: p.name,
-        role: p.role,
-        avatar: p.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
-        rating: Number(p.rating),
-      }));
-    }
-    return [];
+  const client = checkSupabaseConnected();
+  const { data, error } = await client
+    .from("professionals")
+    .select("*")
+    .eq("active", true)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao buscar profissionais no Supabase:", error);
+    throw new Error(`Erro ao buscar profissionais: ${error.message}`);
   }
-  return getLocalData<Professional[]>(STORAGE_KEYS.PROFESSIONALS, initialProfessionals);
+
+  return (data || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    role: p.role,
+    avatar: p.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
+    rating: Number(p.rating),
+  }));
 }
 
 export async function createProfessional(params: Omit<Professional, "id">): Promise<Professional> {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from("professionals")
-      .insert([
-        {
-          name: params.name,
-          role: params.role,
-          avatar: params.avatar || null,
-          rating: params.rating || 5.0,
-          active: true,
-        },
-      ])
-      .select()
-      .single();
+  const client = checkSupabaseConnected();
+  const { data, error } = await client
+    .from("professionals")
+    .insert([
+      {
+        name: params.name,
+        role: params.role,
+        avatar: params.avatar || null,
+        rating: params.rating || 5.0,
+        active: true,
+      },
+    ])
+    .select()
+    .single();
 
-    if (!error && data) {
-      return {
-        id: data.id,
-        name: data.name,
-        role: data.role,
-        avatar: data.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
-        rating: Number(data.rating),
-      };
-    }
+  if (error || !data) {
+    console.error("Erro ao criar profissional no Supabase:", error);
+    throw new Error(`Erro ao criar profissional: ${error?.message || "Registro não retornado."}`);
   }
 
-  const current = getLocalData<Professional[]>(STORAGE_KEYS.PROFESSIONALS, initialProfessionals);
-  const newPro: Professional = {
-    ...params,
-    id: `p_${Date.now()}`,
+  return {
+    id: data.id,
+    name: data.name,
+    role: data.role,
+    avatar: data.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
+    rating: Number(data.rating),
   };
-  setLocalData(STORAGE_KEYS.PROFESSIONALS, [newPro, ...current]);
-  return newPro;
 }
 
 export async function updateProfessional(id: string, params: Partial<Professional>): Promise<boolean> {
-  if (isSupabaseConfigured && supabase && !id.startsWith("p_")) {
-    const { error } = await supabase
-      .from("professionals")
-      .update({
-        ...(params.name && { name: params.name }),
-        ...(params.role && { role: params.role }),
-        ...(params.avatar !== undefined && { avatar: params.avatar }),
-        ...(params.rating !== undefined && { rating: params.rating }),
-      })
-      .eq("id", id);
-    if (!error) return true;
+  const client = checkSupabaseConnected();
+  const { error } = await client
+    .from("professionals")
+    .update({
+      ...(params.name && { name: params.name }),
+      ...(params.role && { role: params.role }),
+      ...(params.avatar !== undefined && { avatar: params.avatar }),
+      ...(params.rating !== undefined && { rating: params.rating }),
+    })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Erro ao atualizar profissional no Supabase:", error);
+    throw new Error(`Erro ao atualizar profissional: ${error.message}`);
   }
 
-  const current = getLocalData<Professional[]>(STORAGE_KEYS.PROFESSIONALS, initialProfessionals);
-  const updated = current.map((p) => (p.id === id ? { ...p, ...params } : p));
-  setLocalData(STORAGE_KEYS.PROFESSIONALS, updated);
   return true;
 }
 
 export async function deleteProfessional(id: string): Promise<boolean> {
-  if (isSupabaseConfigured && supabase && !id.startsWith("p_")) {
-    const { error } = await supabase.from("professionals").delete().eq("id", id);
-    if (!error) return true;
+  const client = checkSupabaseConnected();
+  const { error } = await client.from("professionals").delete().eq("id", id);
+  if (error) {
+    console.error("Erro ao deletar profissional no Supabase:", error);
+    throw new Error(`Erro ao deletar profissional: ${error.message}`);
   }
-
-  const current = getLocalData<Professional[]>(STORAGE_KEYS.PROFESSIONALS, initialProfessionals);
-  const updated = current.filter((p) => p.id !== id);
-  setLocalData(STORAGE_KEYS.PROFESSIONALS, updated);
   return true;
 }
 
@@ -181,65 +168,66 @@ export async function deleteProfessional(id: string): Promise<boolean> {
 // CLIENTES
 // ----------------------------------------------------
 export async function getClients(): Promise<Client[]> {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.from("clients").select("*").order("created_at", { ascending: false });
-    if (!error && data) {
-      return data.map((c) => ({
-        id: c.id,
-        name: c.name,
-        phone: c.phone,
-        email: c.email || "",
-        avatar: c.avatar || "",
-        lastVisit: c.created_at ? new Date(c.created_at).toISOString().split("T")[0] : "N/A",
-        nextVisit: null,
-        totalSpent: Number(c.total_spent || 0),
-        visits: Number(c.visits_count || 1),
-        tag: (c.tag as "VIP" | "Recorrente" | "Nova") || "Nova",
-        notes: c.notes || "",
-        history: [],
-        gallery: [],
-      }));
-    }
-    return [];
+  const client = checkSupabaseConnected();
+  const { data, error } = await client.from("clients").select("*").order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Erro ao buscar clientes no Supabase:", error);
+    throw new Error(`Erro ao buscar clientes: ${error.message}`);
   }
-  return getLocalData<Client[]>(STORAGE_KEYS.CLIENTS, initialClients);
+
+  return (data || []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    email: c.email || "",
+    avatar: c.avatar || "",
+    lastVisit: c.created_at ? new Date(c.created_at).toISOString().split("T")[0] : "N/A",
+    nextVisit: null,
+    totalSpent: Number(c.total_spent || 0),
+    visits: Number(c.visits_count || 1),
+    tag: (c.tag as "VIP" | "Recorrente" | "Nova") || "Nova",
+    notes: c.notes || "",
+    history: [],
+    gallery: [],
+  }));
 }
 
 // ----------------------------------------------------
 // AGENDAMENTOS
 // ----------------------------------------------------
 export async function getAppointments(): Promise<Appointment[]> {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase
-      .from("appointments")
-      .select(`
-        *,
-        services ( name, duration, price ),
-        professionals ( name )
-      `)
-      .order("date", { ascending: true });
+  const client = checkSupabaseConnected();
+  const { data, error } = await client
+    .from("appointments")
+    .select(`
+      *,
+      services ( name, duration, price ),
+      professionals ( name )
+    `)
+    .order("date", { ascending: true });
 
-    if (!error && data) {
-      return data.map((a) => ({
-        id: a.id,
-        clientId: a.client_id || `c_${a.id}`,
-        clientName: a.client_name,
-        avatar: "",
-        phone: a.client_phone,
-        service: a.services?.name || "Serviço",
-        professional: a.professionals?.name || "Profissional",
-        date: a.date,
-        time: a.time,
-        duration: a.services?.duration || 60,
-        price: Number(a.price || a.services?.price || 0),
-        status: a.status as Status,
-        payment: "PIX",
-        notes: a.notes || "",
-      }));
-    }
-    return [];
+  if (error) {
+    console.error("Erro ao buscar agendamentos no Supabase:", error);
+    throw new Error(`Erro ao buscar agendamentos: ${error.message}`);
   }
-  return getLocalData<Appointment[]>(STORAGE_KEYS.APPOINTMENTS, initialAppointments);
+
+  return (data || []).map((a) => ({
+    id: a.id,
+    clientId: a.client_id || `c_${a.id}`,
+    clientName: a.client_name,
+    avatar: "",
+    phone: a.client_phone,
+    service: a.services?.name || "Serviço",
+    professional: a.professionals?.name || "Profissional",
+    date: a.date,
+    time: a.time,
+    duration: a.services?.duration || 60,
+    price: Number(a.price || a.services?.price || 0),
+    status: a.status as Status,
+    payment: "PIX",
+    notes: a.notes || "",
+  }));
 }
 
 export type CreateAppointmentParams = {
@@ -249,8 +237,8 @@ export type CreateAppointmentParams = {
   duration: number;
   professionalId: string;
   professionalName: string;
-  date: string; // YYYY-MM-DD
-  time: string; // "09:00"
+  date: string;
+  time: string;
   clientName: string;
   clientPhone: string;
   clientEmail?: string;
@@ -260,92 +248,75 @@ export type CreateAppointmentParams = {
 const isUUID = (str?: string) =>
   Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
 
-export async function createAppointment(params: CreateAppointmentParams): Promise<Appointment> {
-  if (isSupabaseConfigured && supabase) {
-    // 1. Criar ou buscar cliente
-    let clientId: string | null = null;
-    try {
-      const { data: existingClients } = await supabase
+export async function createAppointment(
+  params: CreateAppointmentParams,
+  initialStatus: string = "confirmado"
+): Promise<Appointment> {
+  const client = checkSupabaseConnected();
+
+  // 1. Criar ou buscar cliente existente por telefone
+  let clientId: string | null = null;
+  try {
+    const { data: existingClients } = await client
+      .from("clients")
+      .select("id")
+      .eq("phone", params.clientPhone)
+      .limit(1);
+
+    if (existingClients && existingClients.length > 0) {
+      clientId = existingClients[0].id;
+    } else {
+      const { data: newClient } = await client
         .from("clients")
-        .select("id")
-        .eq("phone", params.clientPhone)
-        .limit(1);
+        .insert([
+          {
+            name: params.clientName,
+            phone: params.clientPhone,
+            email: params.clientEmail || null,
+            tag: "Nova",
+          },
+        ])
+        .select()
+        .single();
 
-      if (existingClients && existingClients.length > 0) {
-        clientId = existingClients[0].id;
-      } else {
-        const { data: newClient } = await supabase
-          .from("clients")
-          .insert([
-            {
-              name: params.clientName,
-              phone: params.clientPhone,
-              email: params.clientEmail || null,
-              tag: "Nova",
-            },
-          ])
-          .select()
-          .single();
-
-        if (newClient) clientId = newClient.id;
-      }
-    } catch (e) {
-      console.warn("Aviso ao vincular cliente:", e);
+      if (newClient) clientId = newClient.id;
     }
-
-    // 2. Inserir agendamento garantindo UUIDs válidos ou null
-    const validServiceId = isUUID(params.serviceId) ? params.serviceId : null;
-    const validProId = isUUID(params.professionalId) ? params.professionalId : null;
-
-    const { data: appt, error } = await supabase
-      .from("appointments")
-      .insert([
-        {
-          service_id: validServiceId,
-          professional_id: validProId,
-          client_id: isUUID(clientId ?? "") ? clientId : null,
-          client_name: params.clientName,
-          client_phone: params.clientPhone,
-          client_email: params.clientEmail || null,
-          date: params.date,
-          time: params.time,
-          price: params.price,
-          status: "confirmado",
-          notes: params.notes || null,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Erro no insert do agendamento no Supabase:", error);
-    }
-
-    if (!error && appt) {
-      return {
-        id: appt.id,
-        clientId: clientId || `c_${appt.id}`,
-        clientName: params.clientName,
-        avatar: "",
-        phone: params.clientPhone,
-        service: params.serviceName,
-        professional: params.professionalName,
-        date: params.date,
-        time: params.time,
-        duration: params.duration,
-        price: params.price,
-        status: "confirmado",
-        payment: "PIX",
-        notes: params.notes || "",
-      };
-    }
+  } catch (e) {
+    console.warn("Aviso ao vincular cliente:", e);
   }
 
-  // Fallback Local Storage
-  const currentAppts = getLocalData<Appointment[]>(STORAGE_KEYS.APPOINTMENTS, initialAppointments);
-  const newAppt: Appointment = {
-    id: `a_${Date.now()}`,
-    clientId: `c_${Date.now()}`,
+  // 2. Inserir agendamento no Supabase
+  const validServiceId = isUUID(params.serviceId) ? params.serviceId : null;
+  const validProId = isUUID(params.professionalId) ? params.professionalId : null;
+
+  const { data: appt, error } = await client
+    .from("appointments")
+    .insert([
+      {
+        service_id: validServiceId,
+        professional_id: validProId,
+        client_id: isUUID(clientId ?? "") ? clientId : null,
+        client_name: params.clientName,
+        client_phone: params.clientPhone,
+        client_email: params.clientEmail || null,
+        date: params.date,
+        time: params.time,
+        price: params.price,
+        status: initialStatus,
+        notes: params.notes || null,
+      },
+    ])
+    .select()
+    .single();
+
+  if (error || !appt) {
+    console.error("Erro no insert do agendamento no Supabase:", error);
+    throw new Error(`Erro ao criar agendamento no Supabase: ${error?.message || "Falha ao retornar registro."}`);
+  }
+
+  return {
+    id: appt.id,
+    clientId: clientId || `c_${appt.id}`,
     clientName: params.clientName,
     avatar: "",
     phone: params.clientPhone,
@@ -355,50 +326,23 @@ export async function createAppointment(params: CreateAppointmentParams): Promis
     time: params.time,
     duration: params.duration,
     price: params.price,
-    status: "confirmado",
+    status: initialStatus as Status,
     payment: "PIX",
     notes: params.notes || "",
   };
-
-  const updatedAppts = [newAppt, ...currentAppts];
-  setLocalData(STORAGE_KEYS.APPOINTMENTS, updatedAppts);
-
-  // Também criar/atualizar cliente no localStorage
-  const currentClients = getLocalData<Client[]>(STORAGE_KEYS.CLIENTS, initialClients);
-  if (!currentClients.some((c) => c.phone === params.clientPhone)) {
-    const newClient: Client = {
-      id: newAppt.clientId,
-      name: params.clientName,
-      phone: params.clientPhone,
-      email: params.clientEmail || "",
-      avatar: newAppt.avatar,
-      lastVisit: params.date,
-      nextVisit: params.date,
-      totalSpent: params.price,
-      visits: 1,
-      tag: "Nova",
-      notes: params.notes || "",
-      history: [{ date: params.date, service: params.serviceName, value: params.price, pro: params.professionalName }],
-      gallery: [],
-    };
-    setLocalData(STORAGE_KEYS.CLIENTS, [newClient, ...currentClients]);
-  }
-
-  return newAppt;
 }
 
 export async function updateAppointmentStatus(id: string, newStatus: Status): Promise<boolean> {
-  if (isSupabaseConfigured && supabase && !id.startsWith("a_")) {
-    const { error } = await supabase
-      .from("appointments")
-      .update({ status: newStatus })
-      .eq("id", id);
-    if (!error) return true;
-  }
+  const client = checkSupabaseConnected();
+  const { error } = await client
+    .from("appointments")
+    .update({ status: newStatus })
+    .eq("id", id);
 
-  const currentAppts = getLocalData<Appointment[]>(STORAGE_KEYS.APPOINTMENTS, initialAppointments);
-  const updatedAppts = currentAppts.map((a) => (a.id === id ? { ...a, status: newStatus } : a));
-  setLocalData(STORAGE_KEYS.APPOINTMENTS, updatedAppts);
+  if (error) {
+    console.error("Erro ao atualizar agendamento no Supabase:", error);
+    throw new Error(`Erro ao atualizar status do agendamento: ${error.message}`);
+  }
   return true;
 }
 
@@ -446,37 +390,47 @@ const defaultStudioInfo: StudioInfo = {
 };
 
 export async function getStudioSettings(): Promise<StudioInfo> {
-  if (isSupabaseConfigured && supabase) {
-    const { data, error } = await supabase.from("studio_settings").select("key, value");
-    if (!error && data && data.length > 0) {
-      const map: Record<string, string> = {};
-      data.forEach((row: { key: string; value: string }) => {
-        map[row.key] = row.value;
-      });
-      return {
-        studio_name: map.studio_name || defaultStudioInfo.studio_name,
-        tagline: map.tagline || defaultStudioInfo.tagline,
-        whatsapp: map.whatsapp || defaultStudioInfo.whatsapp,
-        instagram: map.instagram || defaultStudioInfo.instagram,
-        facebook: map.facebook || defaultStudioInfo.facebook,
-        address: map.address || defaultStudioInfo.address,
-        maps_url: map.maps_url || defaultStudioInfo.maps_url,
-        cover_url: map.cover_url || defaultStudioInfo.cover_url,
-        logo_url: map.logo_url || defaultStudioInfo.logo_url,
-        rating: map.rating || defaultStudioInfo.rating,
-        reviews: map.reviews || defaultStudioInfo.reviews,
-        hours: map.hours ? JSON.parse(map.hours) : defaultStudioInfo.hours,
-      };
-    }
+  const client = checkSupabaseConnected();
+  const { data, error } = await client.from("studio_settings").select("key, value");
+
+  if (error) {
+    console.error("Erro ao carregar studio_settings do Supabase:", error);
+    throw new Error(`Erro ao buscar configurações: ${error.message}`);
   }
+
+  if (data && data.length > 0) {
+    const map: Record<string, string> = {};
+    data.forEach((row: { key: string; value: string }) => {
+      map[row.key] = row.value;
+    });
+
+    return {
+      studio_name: map.studio_name || defaultStudioInfo.studio_name,
+      tagline: map.tagline || defaultStudioInfo.tagline,
+      whatsapp: map.whatsapp || defaultStudioInfo.whatsapp,
+      instagram: map.instagram || defaultStudioInfo.instagram,
+      facebook: map.facebook || defaultStudioInfo.facebook,
+      address: map.address || defaultStudioInfo.address,
+      maps_url: map.maps_url || defaultStudioInfo.maps_url,
+      cover_url: map.cover_url || defaultStudioInfo.cover_url,
+      logo_url: map.logo_url || defaultStudioInfo.logo_url,
+      rating: map.rating || defaultStudioInfo.rating,
+      reviews: map.reviews || defaultStudioInfo.reviews,
+      hours: map.hours ? JSON.parse(map.hours) : defaultStudioInfo.hours,
+    };
+  }
+
   return defaultStudioInfo;
 }
 
 export async function saveStudioSetting(key: string, value: string): Promise<void> {
-  if (isSupabaseConfigured && supabase) {
-    await supabase
-      .from("studio_settings")
-      .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+  const client = checkSupabaseConnected();
+  const { error } = await client
+    .from("studio_settings")
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+
+  if (error) {
+    console.error("Erro ao salvar studio_setting no Supabase:", error);
+    throw new Error(`Erro ao salvar configuração: ${error.message}`);
   }
 }
-
