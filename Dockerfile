@@ -6,11 +6,14 @@ WORKDIR /app
 # Copia arquivos de dependências
 COPY package*.json ./
 
-# Instala dependências usando npm install para garantir compatibilidade completa
+# Instala dependências usando npm install
 RUN npm install
 
 # Copia todo o código-fonte
 COPY . .
+
+# Define o preset do Nitro para servidor Node.js standalone (Coolify/Docker HTTP server)
+ENV NITRO_PRESET=node-server
 
 # Recebe variáveis de ambiente em tempo de build
 ARG VITE_SUPABASE_URL
@@ -19,7 +22,7 @@ ARG VITE_SUPABASE_ANON_KEY
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
-# Compila o projeto TanStack Start / Nitro
+# Compila o projeto TanStack Start / Nitro para Node HTTP Server
 RUN npm run build
 
 # ESTÁGIO DE EXECUÇÃO (Production)
