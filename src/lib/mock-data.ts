@@ -480,8 +480,18 @@ export const studio = {
   rating: 4.9,
   reviews: 328,
   address: "Rua Oscar Freire, 1042 · Jardins, São Paulo",
+  mapsUrl: "https://maps.google.com/?q=Rua+Oscar+Freire,+1042,+Jardins,+São+Paulo",
   instagram: "@lumiere.lash",
   whatsapp: "(11) 98812-0000",
+  hours: [
+    { day: "Segunda", time: "09:00 – 19:00" },
+    { day: "Terça", time: "09:00 – 19:00" },
+    { day: "Quarta", time: "09:00 – 20:00" },
+    { day: "Quinta", time: "09:00 – 20:00" },
+    { day: "Sexta", time: "09:00 – 20:00" },
+    { day: "Sábado", time: "09:00 – 16:00" },
+    { day: "Domingo", time: "Fechado" },
+  ],
   cover:
     "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600&q=75",
 };
