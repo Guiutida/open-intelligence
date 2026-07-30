@@ -58,12 +58,12 @@ export default function LoginPage() {
               <KeyRound className="size-6" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
-              {resetMode ? "Redefinir Senha" : "Entrar no Painel"}
+              {resetMode ? "Redefinir Senha" : "Painel Administrativo"}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {resetMode
                 ? "Digite seu e-mail para receber as instruções de recuperação."
-                : "Acesse a gestão do seu estúdio ou estabelecimento."}
+                : "Acesso exclusivo para a gestão e equipe do Studio Júlia Gatti."}
             </p>
           </div>
 
@@ -120,13 +120,13 @@ export default function LoginPage() {
               <Button type="submit" className="w-full h-12 rounded-xl text-sm font-semibold mt-2" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="size-4 animate-spin mr-2" /> Processando...
+                    <Loader2 className="size-4 animate-spin mr-2" /> Entrando...
                   </>
                 ) : resetMode ? (
                   "Enviar Link de Recuperação"
                 ) : (
                   <>
-                    Entrar no Painel <ArrowRight className="size-4 ml-1.5" />
+                    Acessar Painel <ArrowRight className="size-4 ml-1.5" />
                   </>
                 )}
               </Button>
@@ -140,15 +140,6 @@ export default function LoginPage() {
                 >
                   Cancelar e voltar
                 </Button>
-              )}
-
-              {!resetMode && (
-                <div className="text-center pt-4 border-t mt-4 text-xs text-muted-foreground">
-                  Não possui uma conta?{" "}
-                  <Link to="/cadastrar" className="font-semibold text-[#F87171] hover:underline">
-                    Cadastrar meu estúdio
-                  </Link>
-                </div>
               )}
             </form>
           )}

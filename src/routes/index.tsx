@@ -103,28 +103,16 @@ function PublicPage() {
             <span className="flex items-center gap-2 font-semibold tracking-wide text-sm drop-shadow-md">
               <Sparkles className="size-4 text-amber-300" /> {info.studio_name}
             </span>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-full text-white bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium gap-1.5 shadow-sm"
-                asChild
-              >
-                <Link to="/cadastrar">
-                  <Sparkles className="size-3.5 text-amber-300" /> Cadastrar meu Estúdio
-                </Link>
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="rounded-full text-white bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium gap-1.5 shadow-sm"
-                asChild
-              >
-                <Link to="/login">
-                  <User className="size-4" /> Entrar no Painel
-                </Link>
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-white bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium gap-1.5 shadow-sm"
+              asChild
+            >
+              <Link to="/login">
+                <User className="size-4" /> Painel Administrativo
+              </Link>
+            </Button>
           </div>
         </header>
 
@@ -164,14 +152,14 @@ function PublicPage() {
                 {info.tagline} · Agende seu horário
               </p>
 
-              {/* Botão de Destaque Agendar para o link do estúdio */}
+              {/* Botão de Destaque Agendar */}
               <div className="mt-5 flex justify-center">
                 <Button
                   size="lg"
-                  className="h-12 rounded-full bg-[#F87171] hover:bg-[#ef4444] text-white font-semibold px-8 shadow-md transition-transform hover:scale-105 gap-2"
+                  className="h-12 rounded-full bg-[#F87171] hover:bg-[#ef4444] text-[#FFFFFF] font-semibold px-8 shadow-md transition-transform hover:scale-105 gap-2"
                   asChild
                 >
-                  <Link to="/s/$studioSlug/agendar" params={{ studioSlug: "julia-gatti" }}>
+                  <Link to="/agendar">
                     <CalendarDays className="size-5" />
                     Agendar Horário
                   </Link>
