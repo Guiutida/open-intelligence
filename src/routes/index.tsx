@@ -213,8 +213,8 @@ function PublicPage() {
               />
                 <div className="relative h-[260px] w-full overflow-hidden sm:h-[320px]">
                   <img
-                    src="https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=75"
-                    alt="Rua movimentada nos Jardins, São Paulo"
+                    src="https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1200&q=75"
+                    alt="Vista urbana da região dos Jardins, São Paulo"
                     className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
