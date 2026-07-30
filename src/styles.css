@@ -136,6 +136,9 @@
   --gold-soft: oklch(0.4 0.05 84);
   --blush: oklch(0.34 0.035 16);
   --blush-deep: oklch(0.72 0.07 16);
+  --link-blue: oklch(0.72 0.06 250);
+  --brand-blue: oklch(0.55 0.19 267);
+  --brand-blue-foreground: oklch(0.99 0.004 250);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
   --ring: oklch(0.82 0.1 84);
