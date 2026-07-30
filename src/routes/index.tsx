@@ -9,6 +9,8 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
+  ExternalLink,
+  Navigation,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
