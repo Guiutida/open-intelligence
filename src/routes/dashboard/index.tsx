@@ -268,8 +268,10 @@ function DashboardPage() {
                     {a.date === today ? a.time : `${a.date.split("-").slice(1).reverse().join("/")} ${a.time}`}
                   </span>
                   <Avatar className="size-9">
-                    <AvatarImage src={a.avatar} alt={a.clientName} />
-                    <AvatarFallback>{a.clientName.slice(0, 2)}</AvatarFallback>
+                    {a.avatar ? <AvatarImage src={a.avatar} alt={a.clientName} /> : null}
+                    <AvatarFallback className="bg-[#F87171]/10 text-[#F87171] font-bold text-xs">
+                      {a.clientName.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{a.clientName}</p>

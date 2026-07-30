@@ -152,8 +152,10 @@ function AgendamentosPage() {
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                         <Avatar className="size-8">
-                          <AvatarImage src={a.avatar} alt={a.clientName} />
-                          <AvatarFallback>{a.clientName.slice(0, 2)}</AvatarFallback>
+                          {a.avatar ? <AvatarImage src={a.avatar} alt={a.clientName} /> : null}
+                          <AvatarFallback className="bg-[#F87171]/10 text-[#F87171] font-bold text-xs">
+                            {a.clientName.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{a.clientName}</span>
                       </div>

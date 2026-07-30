@@ -200,9 +200,27 @@ function FloatingButtonCard() {
   );
 }
 
+type DayConfig = {
+  day: string;
+  open: string;
+  close: string;
+  active: boolean;
+};
+
+const defaultDaysConfig: DayConfig[] = [
+  { day: "Segunda", open: "09:00", close: "19:00", active: true },
+  { day: "Terça", open: "09:00", close: "19:00", active: true },
+  { day: "Quarta", open: "09:00", close: "20:00", active: true },
+  { day: "Quinta", open: "09:00", close: "20:00", active: true },
+  { day: "Sexta", open: "09:00", close: "20:00", active: true },
+  { day: "Sábado", open: "09:00", close: "16:00", active: true },
+  { day: "Domingo", open: "09:00", close: "18:00", active: false },
+];
+
 function ConfiguracoesPage() {
   const [dark, setDark] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [daysConfig, setDaysConfig] = useState<DayConfig[]>(defaultDaysConfig);
   const [info, setInfo] = useState<StudioInfo>({
     studio_name: "Studio Júlia Gatti",
     tagline: "Extensão de Cílios",
@@ -219,12 +237,36 @@ function ConfiguracoesPage() {
   });
 
   useEffect(() => {
-    getStudioSettings().then(setInfo);
+    getStudioSettings().then((data) => {
+      setInfo(data);
+      if (data.hours && data.hours.length > 0) {
+        const parsed = defaultDaysConfig.map((d) => {
+          const found = data.hours.find((h) => h.day === d.day);
+          if (!found) return d;
+          if (found.time === "Fechado" || !found.time.includes("–")) {
+            return { ...d, active: false };
+          }
+          const parts = found.time.split("–").map((s) => s.trim());
+          return {
+            day: d.day,
+            open: parts[0] || "09:00",
+            close: parts[1] || "19:00",
+            active: true,
+          };
+        });
+        setDaysConfig(parsed);
+      }
+    });
   }, []);
 
   const handleSaveAll = async () => {
     setSaving(true);
     try {
+      const formattedHours = daysConfig.map((d) => ({
+        day: d.day,
+        time: d.active ? `${d.open} – ${d.close}` : "Fechado",
+      }));
+
       await saveStudioSetting("studio_name", info.studio_name);
       await saveStudioSetting("tagline", info.tagline);
       await saveStudioSetting("whatsapp", info.whatsapp);
@@ -232,13 +274,21 @@ function ConfiguracoesPage() {
       await saveStudioSetting("address", info.address);
       await saveStudioSetting("cover_url", info.cover_url);
       await saveStudioSetting("logo_url", info.logo_url);
-      toast.success("Configurações salvas no banco com sucesso!");
+      await saveStudioSetting("hours", JSON.stringify(formattedHours));
+
+      toast.success("Configurações e horários salvos no banco!");
     } catch (e) {
       console.error(e);
       toast.error("Erro ao salvar no Supabase.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateDay = (dayName: string, updates: Partial<DayConfig>) => {
+    setDaysConfig((prev) =>
+      prev.map((d) => (d.day === dayName ? { ...d, ...updates } : d))
+    );
   };
 
   return (
@@ -356,16 +406,38 @@ function ConfiguracoesPage() {
           <Card className="rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg">Horário de funcionamento</CardTitle>
-              <CardDescription>Define os horários disponíveis para agendamento.</CardDescription>
+              <CardDescription>Define os horários de atendimento exibidos na página principal e agendamento.</CardDescription>
             </CardHeader>
             <CardContent className="divide-y">
-              {days.map(([d, open, close, active]) => (
-                <div key={d} className="flex flex-wrap items-center gap-3 py-3">
-                  <Switch defaultChecked={active as boolean} />
-                  <span className="w-24 text-sm font-medium">{d}</span>
-                  <Input defaultValue={open as string} className="h-9 w-24 rounded-xl" />
-                  <span className="text-muted-foreground">às</span>
-                  <Input defaultValue={close as string} className="h-9 w-24 rounded-xl" />
+              {daysConfig.map((d) => (
+                <div key={d.day} className="flex flex-wrap items-center justify-between gap-3 py-3.5">
+                  <div className="flex items-center gap-3 w-36">
+                    <Switch
+                      checked={d.active}
+                      onCheckedChange={(checked) => updateDay(d.day, { active: checked })}
+                    />
+                    <span className="text-sm font-semibold text-slate-800">{d.day}</span>
+                  </div>
+
+                  {d.active ? (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={d.open}
+                        onChange={(e) => updateDay(d.day, { open: e.target.value })}
+                        className="h-9 w-24 rounded-xl text-center font-medium"
+                      />
+                      <span className="text-xs text-muted-foreground font-medium">às</span>
+                      <Input
+                        value={d.close}
+                        onChange={(e) => updateDay(d.day, { close: e.target.value })}
+                        className="h-9 w-24 rounded-xl text-center font-medium"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-xs font-semibold text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                      Fechado
+                    </span>
+                  )}
                 </div>
               ))}
             </CardContent>

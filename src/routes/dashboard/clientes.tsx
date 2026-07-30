@@ -158,8 +158,10 @@ function ClientesPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="size-9 ring-1 ring-border">
-                          <AvatarImage src={c.avatar} alt={c.name} />
-                          <AvatarFallback>{c.name.slice(0, 2)}</AvatarFallback>
+                          {c.avatar ? <AvatarImage src={c.avatar} alt={c.name} /> : null}
+                          <AvatarFallback className="bg-[#F87171]/10 text-[#F87171] font-bold text-xs">
+                            {c.name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
                           <p className="truncate font-medium">{c.name}</p>
@@ -217,9 +219,11 @@ function ClientesPage() {
                 className="px-4 pb-8"
               >
                 <div className="flex items-center gap-4 rounded-2xl border bg-gradient-to-br from-blush/60 to-transparent p-4">
-                  <Avatar className="size-16 ring-2 ring-gold/40">
-                    <AvatarImage src={current.avatar} alt={current.name} />
-                    <AvatarFallback>{current.name.slice(0, 2)}</AvatarFallback>
+                  <Avatar className="size-16 ring-2 ring-[#F87171]/30">
+                    {current.avatar ? <AvatarImage src={current.avatar} alt={current.name} /> : null}
+                    <AvatarFallback className="bg-[#F87171]/10 text-[#F87171] font-bold text-lg">
+                      {current.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
                     <p className="text-display truncate text-xl font-semibold">{current.name}</p>

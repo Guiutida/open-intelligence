@@ -108,7 +108,7 @@ export type Client = {
   gallery: { before: string; after: string; label: string }[];
 };
 
-const photo = (n: number) => `https://i.pravatar.cc/160?img=${n}`;
+const photo = (_n: number) => "";
 
 export const clients: Client[] = [
   {

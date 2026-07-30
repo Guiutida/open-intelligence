@@ -87,9 +87,11 @@ export function AppointmentDrawer({
           className="px-4 pb-6"
         >
           <div className="flex items-center gap-3 rounded-2xl border bg-gradient-to-br from-blush/60 to-transparent p-4">
-            <Avatar className="size-12 ring-2 ring-gold/40">
-              <AvatarImage src={a.avatar} alt={a.clientName} />
-              <AvatarFallback>{a.clientName.slice(0, 2)}</AvatarFallback>
+            <Avatar className="size-12 ring-2 ring-[#F87171]/30">
+              {a.avatar ? <AvatarImage src={a.avatar} alt={a.clientName} /> : null}
+              <AvatarFallback className="bg-[#F87171]/10 text-[#F87171] font-bold text-sm">
+                {a.clientName.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
               <p className="truncate text-display text-lg font-semibold">{a.clientName}</p>
