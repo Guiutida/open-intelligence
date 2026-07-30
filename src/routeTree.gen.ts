@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardAgendaRouteImport } from './routes/dashboard/agenda'
+import { Route as DashboardAgendamentosRouteImport } from './routes/dashboard/agendamentos'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,16 +35,23 @@ const DashboardAgendaRoute = DashboardAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardAgendamentosRoute = DashboardAgendamentosRouteImport.update({
+  id: '/agendamentos',
+  path: '/agendamentos',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/dashboard/agenda': typeof DashboardAgendaRoute
+  '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard/agenda': typeof DashboardAgendaRoute
+  '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard': typeof DashboardIndexRoute
 }
 export interface FileRoutesById {
@@ -51,14 +59,26 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteRouteWithChildren
   '/dashboard/agenda': typeof DashboardAgendaRoute
+  '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/dashboard/agenda' | '/dashboard/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/dashboard/agenda'
+    | '/dashboard/agendamentos'
+    | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard/agenda' | '/dashboard'
-  id: '__root__' | '/' | '/dashboard' | '/dashboard/agenda' | '/dashboard/'
+  to: '/' | '/dashboard/agenda' | '/dashboard/agendamentos' | '/dashboard'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/dashboard/agenda'
+    | '/dashboard/agendamentos'
+    | '/dashboard/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -96,16 +116,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAgendaRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/agendamentos': {
+      id: '/dashboard/agendamentos'
+      path: '/agendamentos'
+      fullPath: '/dashboard/agendamentos'
+      preLoaderRoute: typeof DashboardAgendamentosRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
   }
 }
 
 interface DashboardRouteRouteChildren {
   DashboardAgendaRoute: typeof DashboardAgendaRoute
+  DashboardAgendamentosRoute: typeof DashboardAgendamentosRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardAgendaRoute: DashboardAgendaRoute,
+  DashboardAgendamentosRoute: DashboardAgendamentosRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
 
