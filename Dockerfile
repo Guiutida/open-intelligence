@@ -1,18 +1,18 @@
-# Dockerfile otimizado para deploy no Coolify
-FROM node:20-alpine AS builder
+# Dockerfile para Coolify usando Node 22 Alpine
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 # Copia arquivos de dependências
 COPY package*.json ./
 
-# Instala dependências (incluindo devDependencies necessárias para o vite build)
-RUN npm ci
+# Instala dependências usando npm install para garantir compatibilidade completa
+RUN npm install
 
 # Copia todo o código-fonte
 COPY . .
 
-# Recebe variáveis de ambiente em tempo de build (Vite substitui em tempo de compilação)
+# Recebe variáveis de ambiente em tempo de build
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
 
@@ -23,7 +23,7 @@ ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 RUN npm run build
 
 # ESTÁGIO DE EXECUÇÃO (Production)
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
