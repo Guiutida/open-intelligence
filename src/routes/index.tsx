@@ -296,48 +296,80 @@ function PublicPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
-        <ShieldCheck className="mx-auto size-8 text-gold" />
-        <h2 className="mt-4 text-3xl font-semibold">Seu olhar merece o melhor</h2>
-        <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
-          Agende em menos de um minuto e receba a confirmação no WhatsApp na hora.
-        </p>
-        <Button size="lg" className="mt-6 h-13 rounded-2xl px-8" asChild>
-          <Link to="/agendar">Agendar agora</Link>
-        </Button>
+      {/* 1. Hero */}
+      <section className="mx-auto max-w-2xl px-6 pt-24 pb-20 text-center sm:pt-28 sm:pb-24">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <ShieldCheck className="mx-auto size-7 text-gold" strokeWidth={1.6} />
+          <h2 className="text-display mt-6 text-[28px] leading-tight font-bold tracking-tight sm:text-[32px]">
+            Seu olhar merece o melhor
+          </h2>
+          <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+            Agende em menos de um minuto e receba a confirmação no{" "}
+            <span className="font-medium text-link-blue">WhatsApp</span> na hora.
+          </p>
+          <Button
+            size="lg"
+            className="mt-8 h-12 rounded-full bg-foreground px-8 text-background transition-transform hover:-translate-y-0.5 hover:bg-foreground/90"
+            asChild
+          >
+            <Link to="/agendar">Agendar agora</Link>
+          </Button>
+        </motion.div>
       </section>
 
-      <section className="border-t bg-muted/30 px-4 py-14 sm:px-6">
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-3xl border bg-background p-8 text-center shadow-sm sm:p-12">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold tracking-wide uppercase">
-            <Sparkles className="size-3.5 text-gold" /> TecMash
-          </span>
-          <h2 className="text-display mt-4 text-3xl font-semibold sm:text-4xl">
+      {/* 2. Divisor */}
+      <div className="mx-auto max-w-3xl border-t border-border/70" />
+
+      {/* 3. Selo da marca + 4. Banner azul */}
+      <section className="mx-auto max-w-3xl px-6 py-20 text-center sm:py-24">
+        <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.14em] uppercase text-muted-foreground">
+          <Sparkles className="size-3.5 text-gold" /> TecMash
+        </span>
+
+        <div className="mt-8 overflow-hidden rounded-3xl bg-brand-blue px-7 py-10 text-left text-brand-blue-foreground sm:px-12 sm:py-14">
+          <h2 className="text-display max-w-xl text-[28px] leading-tight font-bold sm:text-[34px]">
             Facilite agendamento com a TecMash
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
+          <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-brand-blue-foreground/80">
             Sistemas de agendamento online sob medida para studios, clínicas e salões. Sua agenda
             cheia, sem trabalho manual.
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button size="lg" className="rounded-2xl px-8" asChild>
-              <a
-                href={waLink("(11) 90000-0000", "Olá TecMash! Quero um sistema de agendamento.")}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Quero para o meu negócio
-                <ArrowRight className="size-4" />
-              </a>
-            </Button>
-          </div>
         </div>
+
+        <p className="mx-auto mt-8 max-w-md text-[15px] leading-relaxed text-muted-foreground">
+          Fale com a TecMash e tenha a sua página de agendamentos no ar em poucos dias.
+        </p>
+
+        <Button
+          size="lg"
+          className="group mt-6 h-12 rounded-full bg-foreground px-8 text-background transition-transform hover:-translate-y-0.5 hover:bg-foreground/90"
+          asChild
+        >
+          <a
+            href={waLink("(11) 90000-0000", "Olá TecMash! Quero um sistema de agendamento.")}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Quero para o meu negócio
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+          </a>
+        </Button>
       </section>
 
-      <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-        © 2026 {studio.name} · {studio.address}
-        <span className="mt-1 block text-xs">Feito com ♥ pela TecMash</span>
+      {/* 5. Divisor */}
+      <div className="mx-auto max-w-3xl border-t border-border/70" />
+
+      {/* 6. Rodapé */}
+      <footer className="px-6 py-12 text-center text-xs leading-relaxed text-muted-foreground">
+        <p>© 2026 {studio.name} · {studio.address}</p>
+        <p className="mt-1">Feito com ♥ pela TecMash</p>
       </footer>
+
 
       <WhatsappFab />
     </div>
