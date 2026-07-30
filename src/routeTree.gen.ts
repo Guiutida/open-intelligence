@@ -15,6 +15,7 @@ import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardAgendaRouteImport } from './routes/dashboard/agenda'
 import { Route as DashboardAgendamentosRouteImport } from './routes/dashboard/agendamentos'
 import { Route as DashboardClientesRouteImport } from './routes/dashboard/clientes'
+import { Route as DashboardFinanceiroRouteImport } from './routes/dashboard/financeiro'
 import { Route as DashboardServicosRouteImport } from './routes/dashboard/servicos'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const DashboardClientesRoute = DashboardClientesRouteImport.update({
   path: '/clientes',
   getParentRoute: () => DashboardRouteRoute,
 } as any)
+const DashboardFinanceiroRoute = DashboardFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => DashboardRouteRoute,
+} as any)
 const DashboardServicosRoute = DashboardServicosRouteImport.update({
   id: '/servicos',
   path: '/servicos',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/financeiro': typeof DashboardFinanceiroRoute
   '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/financeiro': typeof DashboardFinanceiroRoute
   '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard': typeof DashboardIndexRoute
 }
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/dashboard/agenda': typeof DashboardAgendaRoute
   '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
   '/dashboard/clientes': typeof DashboardClientesRoute
+  '/dashboard/financeiro': typeof DashboardFinanceiroRoute
   '/dashboard/servicos': typeof DashboardServicosRoute
   '/dashboard/': typeof DashboardIndexRoute
 }
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
+    | '/dashboard/financeiro'
     | '/dashboard/servicos'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
+    | '/dashboard/financeiro'
     | '/dashboard/servicos'
     | '/dashboard'
   id:
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/dashboard/agenda'
     | '/dashboard/agendamentos'
     | '/dashboard/clientes'
+    | '/dashboard/financeiro'
     | '/dashboard/servicos'
     | '/dashboard/'
   fileRoutesById: FileRoutesById
@@ -158,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardClientesRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
+    '/dashboard/financeiro': {
+      id: '/dashboard/financeiro'
+      path: '/financeiro'
+      fullPath: '/dashboard/financeiro'
+      preLoaderRoute: typeof DashboardFinanceiroRouteImport
+      parentRoute: typeof DashboardRouteRoute
+    }
     '/dashboard/servicos': {
       id: '/dashboard/servicos'
       path: '/servicos'
@@ -172,6 +191,7 @@ interface DashboardRouteRouteChildren {
   DashboardAgendaRoute: typeof DashboardAgendaRoute
   DashboardAgendamentosRoute: typeof DashboardAgendamentosRoute
   DashboardClientesRoute: typeof DashboardClientesRoute
+  DashboardFinanceiroRoute: typeof DashboardFinanceiroRoute
   DashboardServicosRoute: typeof DashboardServicosRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
@@ -180,6 +200,7 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardAgendaRoute: DashboardAgendaRoute,
   DashboardAgendamentosRoute: DashboardAgendamentosRoute,
   DashboardClientesRoute: DashboardClientesRoute,
+  DashboardFinanceiroRoute: DashboardFinanceiroRoute,
   DashboardServicosRoute: DashboardServicosRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
