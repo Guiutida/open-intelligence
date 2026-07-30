@@ -38,6 +38,9 @@
   --color-gold-soft: var(--gold-soft);
   --color-blush: var(--blush);
   --color-blush-deep: var(--blush-deep);
+  --color-link-blue: var(--link-blue);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-foreground: var(--brand-blue-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
