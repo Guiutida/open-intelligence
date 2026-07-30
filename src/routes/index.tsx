@@ -189,6 +189,99 @@ function PublicPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-semibold">Localização e horários</h2>
+          <p className="text-sm text-muted-foreground">Venha nos visitar no coração dos Jardins.</p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-5">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.4 }}
+            className="lg:col-span-3"
+          >
+            <Card className="group relative overflow-hidden rounded-2xl">
+              <a
+                href={studio.mapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="absolute inset-0 z-10"
+                aria-label="Abrir localização no Google Maps"
+              />
+              <div className="relative h-[260px] w-full overflow-hidden sm:h-[320px]">
+                <img
+                  src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&q=75"
+                  alt="Mapa estilizado da região dos Jardins em São Paulo"
+                  className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                        <MapPin className="size-4 text-gold" />
+                        Endereço
+                      </p>
+                      <p className="mt-1 text-lg font-semibold">{studio.address}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">Estacionamento conveniado ao lado.</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-foreground transition-colors group-hover:bg-gold/25">
+                      Como chegar <ExternalLink className="size-3.5" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="lg:col-span-2"
+          >
+            <Card className="h-full rounded-2xl">
+              <CardContent className="flex h-full flex-col p-5">
+                <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                  <Clock className="size-4 text-gold" />
+                  Horário de funcionamento
+                </p>
+                <ul className="mt-4 flex-1 space-y-2">
+                  {studio.hours.map((h, i) => {
+                    const today = new Date().getDay();
+                    const dayIndex = i === 6 ? 0 : i + 1;
+                    const isToday = dayIndex === today;
+                    return (
+                      <li
+                        key={h.day}
+                        className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
+                          isToday ? "bg-gold/10 font-medium text-foreground" : "text-muted-foreground"
+                        }`}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          {isToday && <Navigation className="size-3 text-gold" />}
+                          {h.day}
+                        </span>
+                        <span className={isToday ? "font-semibold text-foreground" : ""}>{h.time}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <Button variant="outline" className="mt-4 w-full rounded-xl" asChild>
+                  <a href={studio.mapsUrl} target="_blank" rel="noreferrer">
+                    <Navigation className="size-4" /> Como chegar
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
         <ShieldCheck className="mx-auto size-8 text-gold" />
         <h2 className="mt-4 text-3xl font-semibold">Seu olhar merece o melhor</h2>
