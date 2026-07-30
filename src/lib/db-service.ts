@@ -92,59 +92,57 @@ export const defaultLashProfessionals: Professional[] = [
   },
 ];
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      console.warn(`Operação com o Supabase excedeu ${timeoutMs}ms. Retornando dados locais.`);
+      resolve(fallbackValue);
+    }, timeoutMs);
+
+    promise
+      .then((res) => {
+        clearTimeout(timer);
+        resolve(res);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        console.warn("Erro ao comunicar com Supabase:", err);
+        resolve(fallbackValue);
+      });
+  });
+}
+
 /**
  * Garante e busca a conta do Studio Júlia Gatti no banco de dados
  */
 export async function ensureJuliaGattiStudioInDB(): Promise<StudioRecord> {
   const client = checkSupabaseConnected();
-  if (!client) {
-    return {
-      id: "default-julia-gatti-id",
-      slug: "julia-gatti",
-      name: "Studio Júlia Gatti",
-      subscription_status: "active",
-      subscription_plan: "pro",
-    };
-  }
-
-  try {
-    const { data: existing } = await client
-      .from("studios")
-      .select("id, slug, name, subscription_status, subscription_plan")
-      .eq("slug", "julia-gatti")
-      .limit(1);
-
-    if (existing && existing.length > 0) {
-      return existing[0] as StudioRecord;
-    }
-
-    const { data: newStudio, error } = await client
-      .from("studios")
-      .insert([
-        {
-          slug: "julia-gatti",
-          name: "Studio Júlia Gatti",
-          subscription_status: "active",
-          subscription_plan: "pro",
-        },
-      ])
-      .select()
-      .single();
-
-    if (!error && newStudio) {
-      return newStudio as StudioRecord;
-    }
-  } catch (e) {
-    console.warn("Aviso ao buscar estúdio:", e);
-  }
-
-  return {
+  const defaultRec: StudioRecord = {
     id: "default-julia-gatti-id",
     slug: "julia-gatti",
     name: "Studio Júlia Gatti",
     subscription_status: "active",
     subscription_plan: "pro",
   };
+
+  if (!client) return defaultRec;
+
+  return withTimeout(
+    (async () => {
+      const { data: existing } = await client
+        .from("studios")
+        .select("id, slug, name, subscription_status, subscription_plan")
+        .eq("slug", "julia-gatti")
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        return existing[0] as StudioRecord;
+      }
+      return defaultRec;
+    })(),
+    2500,
+    defaultRec
+  );
 }
 
 /**
@@ -152,25 +150,32 @@ export async function ensureJuliaGattiStudioInDB(): Promise<StudioRecord> {
  */
 export async function getStudioBySlug(slug: string): Promise<StudioRecord> {
   const client = checkSupabaseConnected();
-  if (!client) {
-    return await ensureJuliaGattiStudioInDB();
-  }
+  const defaultRec: StudioRecord = {
+    id: "default-julia-gatti-id",
+    slug: "julia-gatti",
+    name: "Studio Júlia Gatti",
+    subscription_status: "active",
+    subscription_plan: "pro",
+  };
 
-  try {
-    const { data, error } = await client
-      .from("studios")
-      .select("id, slug, name, subscription_status, subscription_plan")
-      .eq("slug", slug)
-      .single();
+  if (!client) return defaultRec;
 
-    if (!error && data) {
-      return data as StudioRecord;
-    }
-  } catch (e) {
-    console.warn("Aviso em getStudioBySlug:", e);
-  }
+  return withTimeout(
+    (async () => {
+      const { data, error } = await client
+        .from("studios")
+        .select("id, slug, name, subscription_status, subscription_plan")
+        .eq("slug", slug)
+        .single();
 
-  return await ensureJuliaGattiStudioInDB();
+      if (!error && data) {
+        return data as StudioRecord;
+      }
+      return defaultRec;
+    })(),
+    2500,
+    defaultRec
+  );
 }
 
 // ----------------------------------------------------
@@ -182,71 +187,37 @@ export async function getServices(studioId?: string): Promise<Service[]> {
     return defaultLashServices;
   }
 
-  try {
-    let targetStudioId = studioId;
+  return withTimeout(
+    (async () => {
+      let query = client.from("services").select("*").eq("active", true);
+      if (studioId) {
+        query = query.eq("studio_id", studioId);
+      }
 
-    if (!targetStudioId) {
-      const studioRec = await ensureJuliaGattiStudioInDB();
-      targetStudioId = studioRec.id;
-    }
+      const { data, error } = await query;
 
-    let { data, error } = await client.from("services").select("*").eq("active", true);
-
-    if (error) {
-      console.error("Erro ao buscar serviços no Supabase:", error);
-      return defaultLashServices;
-    }
-
-    // Se os serviços no banco estiverem vazios, auto-cadastra os serviços de cílios da Júlia Gatti no Supabase
-    if (!data || data.length === 0) {
-      console.log("Auto-cadastrando serviços de extensão de cílios da Júlia Gatti no Supabase...");
-      const toInsert = defaultLashServices.map((s) => ({
-        name: s.name,
-        price: s.price,
-        duration: s.duration,
-        color: s.color,
-        description: s.description,
-        active: true,
-        studio_id: targetStudioId,
-      }));
-
-      const { data: inserted, error: insertErr } = await client
-        .from("services")
-        .insert(toInsert)
-        .select();
-
-      if (!insertErr && inserted && inserted.length > 0) {
-        data = inserted;
-      } else {
+      if (error || !data || data.length === 0) {
+        console.warn("Serviços no Supabase não retornaram dados. Usando dados locais.");
         return defaultLashServices;
       }
-    }
 
-    return (data || []).map((s) => ({
-      id: s.id,
-      name: s.name,
-      price: Number(s.price),
-      duration: Number(s.duration),
-      color: s.color || "var(--gold)",
-      description: s.description || "",
-    }));
-  } catch (err) {
-    console.error("Erro em getServices:", err);
-    return defaultLashServices;
-  }
+      return data.map((s) => ({
+        id: s.id,
+        name: s.name,
+        price: Number(s.price),
+        duration: Number(s.duration),
+        color: s.color || "var(--gold)",
+        description: s.description || "",
+      }));
+    })(),
+    2500,
+    defaultLashServices
+  );
 }
 
 export async function createService(serviceData: Omit<Service, "id"> & { studioId?: string }): Promise<Service> {
   const client = checkSupabaseConnected();
-  if (!client) {
-    throw new Error("Supabase não configurado.");
-  }
-  let targetStudioId = serviceData.studioId;
-
-  if (!targetStudioId) {
-    const studioRec = await ensureJuliaGattiStudioInDB();
-    targetStudioId = studioRec.id;
-  }
+  if (!client) throw new Error("Supabase não configurado.");
 
   const { data, error } = await client
     .from("services")
@@ -257,14 +228,13 @@ export async function createService(serviceData: Omit<Service, "id"> & { studioI
         duration: serviceData.duration,
         color: serviceData.color,
         description: serviceData.description,
-        studio_id: targetStudioId,
+        studio_id: serviceData.studioId || null,
       },
     ])
     .select()
     .single();
 
   if (error || !data) {
-    console.error("Erro ao criar serviço no Supabase:", error);
     throw new Error(`Erro ao criar serviço: ${error?.message || "Registro não retornado."}`);
   }
 
@@ -282,10 +252,7 @@ export async function updateService(id: string, serviceData: Partial<Service>): 
   const client = checkSupabaseConnected();
   if (!client) return false;
   const { error } = await client.from("services").update(serviceData).eq("id", id);
-  if (error) {
-    console.error("Erro ao atualizar serviço no Supabase:", error);
-    throw new Error(`Erro ao atualizar serviço: ${error.message}`);
-  }
+  if (error) throw new Error(`Erro ao atualizar serviço: ${error.message}`);
   return true;
 }
 
@@ -293,10 +260,7 @@ export async function deleteService(id: string): Promise<boolean> {
   const client = checkSupabaseConnected();
   if (!client) return false;
   const { error } = await client.from("services").delete().eq("id", id);
-  if (error) {
-    console.error("Erro ao deletar serviço no Supabase:", error);
-    throw new Error(`Erro ao deletar serviço: ${error.message}`);
-  }
+  if (error) throw new Error(`Erro ao deletar serviço: ${error.message}`);
   return true;
 }
 
@@ -309,68 +273,35 @@ export async function getProfessionals(studioId?: string): Promise<Professional[
     return defaultLashProfessionals;
   }
 
-  try {
-    let targetStudioId = studioId;
+  return withTimeout(
+    (async () => {
+      let query = client.from("professionals").select("*").eq("active", true).order("created_at", { ascending: true });
+      if (studioId) {
+        query = query.eq("studio_id", studioId);
+      }
 
-    if (!targetStudioId) {
-      const studioRec = await ensureJuliaGattiStudioInDB();
-      targetStudioId = studioRec.id;
-    }
+      const { data, error } = await query;
 
-    let { data, error } = await client.from("professionals").select("*").eq("active", true).order("created_at", { ascending: true });
-
-    if (error) {
-      console.error("Erro ao buscar profissionais no Supabase:", error);
-      return defaultLashProfessionals;
-    }
-
-    // Auto-cadastra profissionais no Supabase se a tabela estiver vazia
-    if (!data || data.length === 0) {
-      console.log("Auto-cadastrando equipe da Júlia Gatti no Supabase...");
-      const toInsert = defaultLashProfessionals.map((p) => ({
-        name: p.name,
-        role: p.role,
-        avatar: p.avatar,
-        rating: p.rating,
-        active: true,
-        studio_id: targetStudioId,
-      }));
-
-      const { data: inserted, error: insertErr } = await client
-        .from("professionals")
-        .insert(toInsert)
-        .select();
-
-      if (!insertErr && inserted && inserted.length > 0) {
-        data = inserted;
-      } else {
+      if (error || !data || data.length === 0) {
         return defaultLashProfessionals;
       }
-    }
 
-    return (data || []).map((p) => ({
-      id: p.id,
-      name: p.name,
-      role: p.role,
-      avatar: p.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
-      rating: Number(p.rating),
-    }));
-  } catch (err) {
-    console.error("Erro em getProfessionals:", err);
-    return defaultLashProfessionals;
-  }
+      return data.map((p) => ({
+        id: p.id,
+        name: p.name,
+        role: p.role,
+        avatar: p.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
+        rating: Number(p.rating),
+      }));
+    })(),
+    2500,
+    defaultLashProfessionals
+  );
 }
 
 export async function createProfessional(params: Omit<Professional, "id"> & { studioId?: string }): Promise<Professional> {
   const client = checkSupabaseConnected();
   if (!client) throw new Error("Supabase não configurado.");
-
-  let targetStudioId = params.studioId;
-
-  if (!targetStudioId) {
-    const studioRec = await ensureJuliaGattiStudioInDB();
-    targetStudioId = studioRec.id;
-  }
 
   const { data, error } = await client
     .from("professionals")
@@ -381,14 +312,13 @@ export async function createProfessional(params: Omit<Professional, "id"> & { st
         avatar: params.avatar || null,
         rating: params.rating || 5.0,
         active: true,
-        studio_id: targetStudioId,
+        studio_id: params.studioId || null,
       },
     ])
     .select()
     .single();
 
   if (error || !data) {
-    console.error("Erro ao criar profissional no Supabase:", error);
     throw new Error(`Erro ao criar profissional: ${error?.message || "Registro não retornado."}`);
   }
 
@@ -405,21 +335,8 @@ export async function updateProfessional(id: string, params: Partial<Professiona
   const client = checkSupabaseConnected();
   if (!client) return false;
 
-  const { error } = await client
-    .from("professionals")
-    .update({
-      ...(params.name && { name: params.name }),
-      ...(params.role && { role: params.role }),
-      ...(params.avatar !== undefined && { avatar: params.avatar }),
-      ...(params.rating !== undefined && { rating: params.rating }),
-    })
-    .eq("id", id);
-
-  if (error) {
-    console.error("Erro ao atualizar profissional no Supabase:", error);
-    throw new Error(`Erro ao atualizar profissional: ${error.message}`);
-  }
-
+  const { error } = await client.from("professionals").update(params).eq("id", id);
+  if (error) throw new Error(`Erro ao atualizar profissional: ${error.message}`);
   return true;
 }
 
@@ -428,10 +345,7 @@ export async function deleteProfessional(id: string): Promise<boolean> {
   if (!client) return false;
 
   const { error } = await client.from("professionals").delete().eq("id", id);
-  if (error) {
-    console.error("Erro ao deletar profissional no Supabase:", error);
-    throw new Error(`Erro ao deletar profissional: ${error.message}`);
-  }
+  if (error) throw new Error(`Erro ao deletar profissional: ${error.message}`);
   return true;
 }
 
@@ -442,39 +356,33 @@ export async function getClients(studioId?: string): Promise<Client[]> {
   const client = checkSupabaseConnected();
   if (!client) return [];
 
-  try {
-    let query = client.from("clients").select("*").order("created_at", { ascending: false });
+  return withTimeout(
+    (async () => {
+      let query = client.from("clients").select("*").order("created_at", { ascending: false });
+      if (studioId) query = query.eq("studio_id", studioId);
 
-    if (studioId) {
-      query = query.eq("studio_id", studioId);
-    }
+      const { data, error } = await query;
+      if (error || !data) return [];
 
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Erro ao buscar clientes no Supabase:", error);
-      return [];
-    }
-
-    return (data || []).map((c) => ({
-      id: c.id,
-      name: c.name,
-      phone: c.phone,
-      email: c.email || "",
-      avatar: c.avatar || "",
-      lastVisit: c.created_at ? new Date(c.created_at).toISOString().split("T")[0] : "N/A",
-      nextVisit: null,
-      totalSpent: Number(c.total_spent || 0),
-      visits: Number(c.visits_count || 1),
-      tag: (c.tag as "VIP" | "Recorrente" | "Nova") || "Nova",
-      notes: c.notes || "",
-      history: [],
-      gallery: [],
-    }));
-  } catch (err) {
-    console.error("Erro em getClients:", err);
-    return [];
-  }
+      return data.map((c) => ({
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        email: c.email || "",
+        avatar: c.avatar || "",
+        lastVisit: c.created_at ? new Date(c.created_at).toISOString().split("T")[0] : "N/A",
+        nextVisit: null,
+        totalSpent: Number(c.total_spent || 0),
+        visits: Number(c.visits_count || 1),
+        tag: (c.tag as "VIP" | "Recorrente" | "Nova") || "Nova",
+        notes: c.notes || "",
+        history: [],
+        gallery: [],
+      }));
+    })(),
+    2500,
+    []
+  );
 }
 
 // ----------------------------------------------------
@@ -484,47 +392,42 @@ export async function getAppointments(studioId?: string): Promise<Appointment[]>
   const client = checkSupabaseConnected();
   if (!client) return [];
 
-  try {
-    let query = client
-      .from("appointments")
-      .select(`
-        *,
-        services ( name, duration, price ),
-        professionals ( name )
-      `)
-      .order("date", { ascending: true });
+  return withTimeout(
+    (async () => {
+      let query = client
+        .from("appointments")
+        .select(`
+          *,
+          services ( name, duration, price ),
+          professionals ( name )
+        `)
+        .order("date", { ascending: true });
 
-    if (studioId) {
-      query = query.eq("studio_id", studioId);
-    }
+      if (studioId) query = query.eq("studio_id", studioId);
 
-    const { data, error } = await query;
+      const { data, error } = await query;
+      if (error || !data) return [];
 
-    if (error) {
-      console.error("Erro ao buscar agendamentos no Supabase:", error);
-      return [];
-    }
-
-    return (data || []).map((a) => ({
-      id: a.id,
-      clientId: a.client_id || `c_${a.id}`,
-      clientName: a.client_name,
-      avatar: "",
-      phone: a.client_phone,
-      service: a.services?.name || "Serviço",
-      professional: a.professionals?.name || "Profissional",
-      date: a.date,
-      time: a.time,
-      duration: a.services?.duration || 60,
-      price: Number(a.price || a.services?.price || 0),
-      status: a.status as Status,
-      payment: "PIX",
-      notes: a.notes || "",
-    }));
-  } catch (err) {
-    console.error("Erro em getAppointments:", err);
-    return [];
-  }
+      return data.map((a) => ({
+        id: a.id,
+        clientId: a.client_id || `c_${a.id}`,
+        clientName: a.client_name,
+        avatar: "",
+        phone: a.client_phone,
+        service: a.services?.name || "Serviço",
+        professional: a.professionals?.name || "Profissional",
+        date: a.date,
+        time: a.time,
+        duration: a.services?.duration || 60,
+        price: Number(a.price || a.services?.price || 0),
+        status: a.status as Status,
+        payment: "PIX",
+        notes: a.notes || "",
+      }));
+    })(),
+    2500,
+    []
+  );
 }
 
 export type CreateAppointmentParams = {
@@ -570,14 +473,6 @@ export async function createAppointment(
     };
   }
 
-  let targetStudioId = params.studioId;
-
-  if (!targetStudioId) {
-    const studioRec = await ensureJuliaGattiStudioInDB();
-    targetStudioId = studioRec.id;
-  }
-
-  // 1. Criar ou buscar cliente existente por telefone
   let clientId: string | null = null;
   try {
     const { data: existingClients } = await client
@@ -597,7 +492,7 @@ export async function createAppointment(
             phone: params.clientPhone,
             email: params.clientEmail || null,
             tag: "Nova",
-            studio_id: targetStudioId,
+            studio_id: params.studioId || null,
           },
         ])
         .select()
@@ -609,7 +504,6 @@ export async function createAppointment(
     console.warn("Aviso ao vincular cliente:", e);
   }
 
-  // 2. Inserir agendamento no Supabase
   const validServiceId = isUUID(params.serviceId) ? params.serviceId : null;
   const validProId = isUUID(params.professionalId) ? params.professionalId : null;
 
@@ -628,7 +522,7 @@ export async function createAppointment(
         price: params.price,
         status: initialStatus,
         notes: params.notes || null,
-        studio_id: targetStudioId,
+        studio_id: params.studioId || null,
       },
     ])
     .select()
@@ -660,15 +554,8 @@ export async function createAppointment(
 export async function updateAppointmentStatus(id: string, newStatus: Status): Promise<boolean> {
   const client = checkSupabaseConnected();
   if (!client) return false;
-  const { error } = await client
-    .from("appointments")
-    .update({ status: newStatus })
-    .eq("id", id);
-
-  if (error) {
-    console.error("Erro ao atualizar agendamento no Supabase:", error);
-    throw new Error(`Erro ao atualizar status do agendamento: ${error.message}`);
-  }
+  const { error } = await client.from("appointments").update({ status: newStatus }).eq("id", id);
+  if (error) throw new Error(`Erro ao atualizar status do agendamento: ${error.message}`);
   return true;
 }
 
@@ -719,54 +606,43 @@ export async function getStudioSettings(studioId?: string): Promise<StudioInfo> 
   const client = checkSupabaseConnected();
   if (!client) return defaultStudioInfo;
 
-  try {
-    let query = client.from("studio_settings").select("key, value");
+  return withTimeout(
+    (async () => {
+      let query = client.from("studio_settings").select("key, value");
+      if (studioId) query = query.eq("studio_id", studioId);
 
-    if (studioId) {
-      query = query.eq("studio_id", studioId);
-    }
+      const { data, error } = await query;
+      if (error || !data || data.length === 0) return defaultStudioInfo;
 
-    const { data, error } = await query;
+      const map: Record<string, string> = {};
+      data.forEach((row: { key: string; value: string }) => {
+        map[row.key] = row.value;
+      });
 
-    if (error || !data || data.length === 0) {
-      return defaultStudioInfo;
-    }
-
-    const map: Record<string, string> = {};
-    data.forEach((row: { key: string; value: string }) => {
-      map[row.key] = row.value;
-    });
-
-    return {
-      studio_name: map.studio_name || defaultStudioInfo.studio_name,
-      tagline: map.tagline || defaultStudioInfo.tagline,
-      whatsapp: map.whatsapp || defaultStudioInfo.whatsapp,
-      instagram: map.instagram || defaultStudioInfo.instagram,
-      facebook: map.facebook || defaultStudioInfo.facebook,
-      address: map.address || defaultStudioInfo.address,
-      maps_url: map.maps_url || defaultStudioInfo.maps_url,
-      cover_url: map.cover_url || defaultStudioInfo.cover_url,
-      logo_url: map.logo_url || defaultStudioInfo.logo_url,
-      rating: map.rating || defaultStudioInfo.rating,
-      reviews: map.reviews || defaultStudioInfo.reviews,
-      hours: map.hours ? JSON.parse(map.hours) : defaultStudioInfo.hours,
-    };
-  } catch (err) {
-    console.error("Erro em getStudioSettings:", err);
-    return defaultStudioInfo;
-  }
+      return {
+        studio_name: map.studio_name || defaultStudioInfo.studio_name,
+        tagline: map.tagline || defaultStudioInfo.tagline,
+        whatsapp: map.whatsapp || defaultStudioInfo.whatsapp,
+        instagram: map.instagram || defaultStudioInfo.instagram,
+        facebook: map.facebook || defaultStudioInfo.facebook,
+        address: map.address || defaultStudioInfo.address,
+        maps_url: map.maps_url || defaultStudioInfo.maps_url,
+        cover_url: map.cover_url || defaultStudioInfo.cover_url,
+        logo_url: map.logo_url || defaultStudioInfo.logo_url,
+        rating: map.rating || defaultStudioInfo.rating,
+        reviews: map.reviews || defaultStudioInfo.reviews,
+        hours: map.hours ? JSON.parse(map.hours) : defaultStudioInfo.hours,
+      };
+    })(),
+    2500,
+    defaultStudioInfo
+  );
 }
 
 export async function saveStudioSetting(key: string, value: string, studioId?: string): Promise<void> {
   const client = checkSupabaseConnected();
   if (!client) return;
-
-  const { error } = await client
+  await client
     .from("studio_settings")
     .upsert({ key, value, studio_id: studioId || null, updated_at: new Date().toISOString() }, { onConflict: "key" });
-
-  if (error) {
-    console.error("Erro ao salvar studio_setting no Supabase:", error);
-    throw new Error(`Erro ao salvar configuração: ${error.message}`);
-  }
 }
