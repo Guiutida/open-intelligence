@@ -71,11 +71,40 @@ function formatPhoneMask(v: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+const DAY_MAP = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+function generateSlotsForDay(hoursString?: string): string[] {
+  if (!hoursString || hoursString === "Fechado" || !hoursString.includes("–")) {
+    return [];
+  }
+  const parts = hoursString.split("–").map((s) => s.trim());
+  if (parts.length < 2) return [];
+
+  const [openH, openM] = parts[0].split(":").map(Number);
+  const [closeH, closeM] = parts[1].split(":").map(Number);
+
+  if (isNaN(openH) || isNaN(closeH)) return [];
+
+  const slots: string[] = [];
+  const start = openH * 60 + (openM || 0);
+  const end = closeH * 60 + (closeM || 0);
+  const interval = 90; // 1h30m de intervalo padrão por procedimento
+
+  for (let minutes = start; minutes + 60 <= end; minutes += interval) {
+    const h = String(Math.floor(minutes / 60)).padStart(2, "0");
+    const m = String(minutes % 60).padStart(2, "0");
+    slots.push(`${h}:${m}`);
+  }
+
+  return slots;
+}
+
 function BookingPage() {
   const { serviceId } = Route.useSearch();
   const [servicesList, setServicesList] = useState<Service[]>([]);
   const [professionalsList, setProfessionalsList] = useState<Professional[]>([]);
   const [existingAppointments, setExistingAppointments] = useState<Appointment[]>([]);
+  const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
   const [step, setStep] = useState(0);
@@ -91,14 +120,21 @@ function BookingPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [svcs, pros, appts] = await Promise.all([
+        const [svcs, pros, appts, info] = await Promise.all([
           getServices(),
           getProfessionals(),
           getAppointments(),
+          getStudioSettings(),
         ]);
         setServicesList(svcs);
         setProfessionalsList(pros);
         setExistingAppointments(appts);
+        setStudioInfo(info);
+
+        // Se só tem 1 profissional cadastrada, seleciona ela automaticamente
+        if (pros.length === 1) {
+          setPro(pros[0]);
+        }
 
         // Se veio serviceId via URL (clique direto na Home)
         if (serviceId) {
@@ -116,6 +152,25 @@ function BookingPage() {
     loadData();
   }, [serviceId]);
 
+  // Verificar se o dia está fechado no banco
+  const getDayConfig = (d: Date) => {
+    if (!studioInfo?.hours) return null;
+    const dayName = DAY_MAP[d.getDay()];
+    return studioInfo.hours.find((h) => h.day === dayName) || null;
+  };
+
+  const isDayClosed = (d: Date) => {
+    const cfg = getDayConfig(d);
+    return !cfg || cfg.time === "Fechado" || !cfg.time.includes("–");
+  };
+
+  // Gerar horários dinâmicos baseados no dia selecionado
+  const rawSlots = useMemo(() => {
+    if (!date) return [];
+    const cfg = getDayConfig(date);
+    return generateSlotsForDay(cfg?.time);
+  }, [date, studioInfo]);
+
   // Filtrar horários ocupados para a data e profissional selecionados
   const formattedSelectedDate = date
     ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
@@ -130,9 +185,7 @@ function BookingPage() {
     )
     .map((a) => a.time);
 
-  const available = date
-    ? ALL_SLOTS.filter((slot) => !bookedSlotsOnDate.includes(slot))
-    : [];
+  const available = rawSlots.filter((slot) => !bookedSlotsOnDate.includes(slot));
 
   const canAdvance = [
     !!service,
@@ -364,7 +417,7 @@ function BookingPage() {
               <>
                 <h1 className="text-2xl font-semibold">Escolha a data</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Domingos e datas passadas estão indisponíveis.
+                  Dias fechados e datas passadas ficam indisponíveis para agendamento.
                 </p>
                 <Card className="mt-5 rounded-2xl">
                   <CardContent className="flex justify-center p-3 sm:p-5">
@@ -377,7 +430,7 @@ function BookingPage() {
                       disabled={(d) => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        return d.getDay() === 0 || d < today;
+                        return isDayClosed(d) || d < today;
                       }}
                       className={cn("pointer-events-auto rounded-xl")}
                     />
