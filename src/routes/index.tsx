@@ -24,6 +24,8 @@ import {
   getServices,
   getStudioSettings,
   getProfessionals,
+  defaultLashServices,
+  defaultLashProfessionals,
   type Service,
   type StudioInfo,
   type Professional,
@@ -76,22 +78,24 @@ const defaultInfo: StudioInfo = {
 };
 
 function PublicPage() {
-  const [services, setServices] = useState<Service[]>([]);
-  const [loadingServices, setLoadingServices] = useState(true);
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [loadingPros, setLoadingPros] = useState(true);
+  const [services, setServices] = useState<Service[]>(defaultLashServices);
+  const [loadingServices, setLoadingServices] = useState(false);
+  const [professionals, setProfessionals] = useState<Professional[]>(defaultLashProfessionals);
+  const [loadingPros, setLoadingPros] = useState(false);
   const [info, setInfo] = useState<StudioInfo>(defaultInfo);
 
   useEffect(() => {
     getServices()
-      .then((data) => setServices(data))
-      .catch((err) => console.error("Erro ao buscar serviços:", err))
-      .finally(() => setLoadingServices(false));
+      .then((data) => {
+        if (data && data.length > 0) setServices(data);
+      })
+      .catch((err) => console.error("Erro ao buscar serviços:", err));
 
     getProfessionals()
-      .then((data) => setProfessionals(data))
-      .catch((err) => console.error("Erro ao buscar profissionais:", err))
-      .finally(() => setLoadingPros(false));
+      .then((data) => {
+        if (data && data.length > 0) setProfessionals(data);
+      })
+      .catch((err) => console.error("Erro ao buscar profissionais:", err));
 
     getStudioSettings()
       .then((data) => setInfo(data))
