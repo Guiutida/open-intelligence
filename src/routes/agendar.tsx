@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ptBR } from "date-fns/locale";
 import {
@@ -11,6 +11,7 @@ import {
   CalendarDays,
   PartyPopper,
   Loader2,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,23 +27,30 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import {
   brlExact,
-  professionals,
-  services,
   studio,
   type Professional,
   type Service,
+  type Appointment,
 } from "@/lib/mock-data";
+import { getServices, getProfessionals, getAppointments, createAppointment } from "@/lib/db-service";
+
+type BookingSearch = {
+  serviceId?: string;
+};
 
 export const Route = createFileRoute("/agendar")({
+  validateSearch: (search: Record<string, unknown>): BookingSearch => ({
+    serviceId: typeof search.serviceId === "string" ? search.serviceId : undefined,
+  }),
   head: () => ({
     meta: [
-      { title: "Agendar horário · Lumière Lash Studio" },
+      { title: "Agendar horário · Studio Júlia Gatti" },
       {
         name: "description",
         content:
           "Escolha serviço, profissional, data e horário e confirme seu agendamento em poucos cliques.",
       },
-      { property: "og:title", content: "Agendar horário · Lumière Lash Studio" },
+      { property: "og:title", content: "Agendar horário · Studio Júlia Gatti" },
       {
         property: "og:description",
         content:
@@ -56,19 +64,74 @@ export const Route = createFileRoute("/agendar")({
 const steps = ["Serviço", "Profissional", "Data", "Horário", "Seus dados", "Resumo"];
 const ALL_SLOTS = ["09:00", "10:30", "12:00", "14:00", "16:00", "17:30", "19:00"];
 
+function formatPhoneMask(v: string) {
+  const digits = v.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits ? `(${digits}` : "";
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 function BookingPage() {
+  const { serviceId } = Route.useSearch();
+  const [servicesList, setServicesList] = useState<Service[]>([]);
+  const [professionalsList, setProfessionalsList] = useState<Professional[]>([]);
+  const [existingAppointments, setExistingAppointments] = useState<Appointment[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
   const [step, setStep] = useState(0);
   const [service, setService] = useState<Service | null>(null);
   const [pro, setPro] = useState<Professional | null>(null);
-  const [date, setDate] = useState<Date | undefined>();
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [done, setDone] = useState(false);
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [svcs, pros, appts] = await Promise.all([
+          getServices(),
+          getProfessionals(),
+          getAppointments(),
+        ]);
+        setServicesList(svcs);
+        setProfessionalsList(pros);
+        setExistingAppointments(appts);
+
+        // Se veio serviceId via URL (clique direto na Home)
+        if (serviceId) {
+          const found = svcs.find((s) => s.id === serviceId);
+          if (found) {
+            setService(found);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados do banco:", err);
+      } finally {
+        setLoadingData(false);
+      }
+    }
+    loadData();
+  }, [serviceId]);
+
+  // Filtrar horários ocupados para a data e profissional selecionados
+  const formattedSelectedDate = date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    : "";
+
+  const bookedSlotsOnDate = existingAppointments
+    .filter(
+      (a) =>
+        a.date === formattedSelectedDate &&
+        (a.professional === pro?.name || !pro) &&
+        a.status !== "cancelado"
+    )
+    .map((a) => a.time);
+
   const available = date
-    ? ALL_SLOTS.filter((_, i) => (date.getDate() + i) % 4 !== 0)
+    ? ALL_SLOTS.filter((slot) => !bookedSlotsOnDate.includes(slot))
     : [];
 
   const canAdvance = [
@@ -76,71 +139,115 @@ function BookingPage() {
     !!pro,
     !!date,
     !!time,
-    form.name.trim().length > 2 && form.phone.trim().length >= 8,
+    form.name.trim().length >= 3 && form.phone.replace(/\D/g, "").length >= 10,
     true,
   ][step];
 
   const goNext = () => {
     if (step === 2) {
       setLoadingSlots(true);
-      setTimeout(() => setLoadingSlots(false), 700);
+      setTimeout(() => setLoadingSlots(false), 500);
     }
     setStep((s) => Math.min(s + 1, steps.length - 1));
   };
 
-  const confirm = () => {
+  const confirm = async () => {
+    if (!service || !pro || !date || !time) return;
     setConfirming(true);
-    setTimeout(() => {
-      setConfirming(false);
+    try {
+      await createAppointment({
+        serviceId: service.id,
+        serviceName: service.name,
+        price: service.price,
+        duration: service.duration,
+        professionalId: pro.id,
+        professionalName: pro.name,
+        date: formattedSelectedDate,
+        time,
+        clientName: form.name,
+        clientPhone: form.phone,
+        clientEmail: form.email,
+      });
       setDone(true);
       toast.success("Agendamento confirmado!", {
         description: `${service?.name} · ${date?.toLocaleDateString("pt-BR")} às ${time}`,
       });
-    }, 1200);
+    } catch (error) {
+      console.error("Erro ao confirmar agendamento:", error);
+      toast.error("Erro ao salvar o agendamento. Tente novamente.");
+    } finally {
+      setConfirming(false);
+    }
   };
+
+  const cleanPhone = studio.whatsapp.replace(/\D/g, "");
+  const whatsappMsg = encodeURIComponent(
+    `Olá, Studio Júlia Gatti! Agendei pelo site:\n\n` +
+      `📌 *Serviço:* ${service?.name}\n` +
+      `👤 *Profissional:* ${pro?.name}\n` +
+      `📅 *Data:* ${date?.toLocaleDateString("pt-BR")} às ${time}\n` +
+      `✍️ *Nome:* ${form.name}\n` +
+      `📞 *Contato:* ${form.phone}`
+  );
+  const waUrl = `https://wa.me/55${cleanPhone}?text=${whatsappMsg}`;
 
   if (done) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background px-4">
+      <div className="grid min-h-screen place-items-center bg-background px-4 py-8">
         <motion.div
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="w-full max-w-md rounded-3xl border bg-card p-8 text-center shadow-[var(--shadow-lift)]"
+          className="w-full max-w-md rounded-3xl border bg-card p-6 sm:p-8 text-center shadow-xl"
         >
-          <span className="mx-auto grid size-16 place-items-center rounded-full bg-success/12">
-            <PartyPopper className="size-7 text-success" />
+          <span className="mx-auto grid size-16 place-items-center rounded-full bg-emerald-500/15 text-emerald-600">
+            <PartyPopper className="size-8" />
           </span>
-          <h1 className="mt-5 text-2xl font-semibold">Tudo certo, {form.name.split(" ")[0]}!</h1>
+          <h1 className="mt-5 text-2xl font-extrabold text-slate-900">
+            Tudo certo, {form.name.split(" ")[0]}!
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Seu horário foi reservado. Você receberá a confirmação no WhatsApp.
+            Seu agendamento foi reservado com sucesso no **Studio Júlia Gatti**.
           </p>
-          <div className="mt-6 space-y-2 rounded-2xl border bg-muted/40 p-4 text-left text-sm">
+          <div className="mt-6 space-y-2.5 rounded-2xl border bg-muted/40 p-4 text-left text-sm">
             <p className="flex justify-between">
               <span className="text-muted-foreground">Serviço</span>
-              <span className="font-medium">{service?.name}</span>
+              <span className="font-semibold text-slate-900">{service?.name}</span>
             </p>
             <p className="flex justify-between">
               <span className="text-muted-foreground">Profissional</span>
-              <span className="font-medium">{pro?.name}</span>
+              <span className="font-semibold text-slate-900">{pro?.name}</span>
             </p>
             <p className="flex justify-between">
               <span className="text-muted-foreground">Data</span>
-              <span className="font-medium">{date?.toLocaleDateString("pt-BR")}</span>
+              <span className="font-semibold text-slate-900">{date?.toLocaleDateString("pt-BR")}</span>
             </p>
             <p className="flex justify-between">
               <span className="text-muted-foreground">Horário</span>
-              <span className="font-medium">{time}</span>
+              <span className="font-semibold text-slate-900">{time}</span>
             </p>
             <Separator />
-            <p className="flex justify-between text-base">
+            <p className="flex justify-between text-base font-bold">
               <span>Total</span>
-              <span className="font-semibold">{brlExact(service?.price ?? 0)}</span>
+              <span className="text-[#F87171]">{brlExact(service?.price ?? 0)}</span>
             </p>
           </div>
-          <Button className="mt-6 h-12 w-full rounded-2xl" asChild>
-            <Link to="/">Voltar ao studio</Link>
-          </Button>
+
+          <div className="mt-6 space-y-3">
+            <Button
+              className="h-12 w-full rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold gap-2 shadow-md"
+              asChild
+            >
+              <a href={waUrl} target="_blank" rel="noreferrer">
+                <MessageCircle className="size-5 fill-white/20" />
+                Enviar confirmação por WhatsApp
+              </a>
+            </Button>
+
+            <Button variant="outline" className="h-12 w-full rounded-2xl font-medium" asChild>
+              <Link to="/">Voltar ao Studio</Link>
+            </Button>
+          </div>
         </motion.div>
       </div>
     );
@@ -184,7 +291,7 @@ function BookingPage() {
                   Selecione o procedimento desejado.
                 </p>
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {services.map((s) => (
+                  {servicesList.map((s) => (
                     <button key={s.id} onClick={() => setService(s)} className="text-left">
                       <Card
                         className={cn(
@@ -220,10 +327,10 @@ function BookingPage() {
               <>
                 <h1 className="text-2xl font-semibold">Escolha a profissional</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Todas são especialistas certificadas.
+                  Selecione a profissional de sua preferência.
                 </p>
                 <div className="mt-5 grid gap-3">
-                  {professionals.map((p) => (
+                  {professionalsList.map((p) => (
                     <button key={p.id} onClick={() => setPro(p)} className="text-left">
                       <Card
                         className={cn(
@@ -266,8 +373,12 @@ function BookingPage() {
                       locale={ptBR}
                       selected={date}
                       onSelect={setDate}
-                      defaultMonth={new Date(2026, 6, 1)}
-                      disabled={(d) => d.getDay() === 0 || d < new Date(2026, 6, 30)}
+                      defaultMonth={new Date()}
+                      disabled={(d) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return d.getDay() === 0 || d < today;
+                      }}
                       className={cn("pointer-events-auto rounded-xl")}
                     />
                   </CardContent>
@@ -332,9 +443,9 @@ function BookingPage() {
                       <Label>Telefone / WhatsApp</Label>
                       <Input
                         className="h-12 rounded-xl"
-                        placeholder="(11) 90000-0000"
+                        placeholder="(13) 99117-6958"
                         value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        onChange={(e) => setForm({ ...form, phone: formatPhoneMask(e.target.value) })}
                       />
                     </div>
                     <div className="grid gap-2">

@@ -1,0 +1,33 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="roseGold" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E8A589"/>
+      <stop offset="35%" stop-color="#C56A47"/>
+      <stop offset="70%" stop-color="#D98A6C"/>
+      <stop offset="100%" stop-color="#A44D2B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Double Circle Ring -->
+  <circle cx="200" cy="200" r="185" stroke="url(#roseGold)" stroke-width="3" fill="white"/>
+  <circle cx="200" cy="200" r="177" stroke="url(#roseGold)" stroke-width="1.5" fill="none"/>
+
+  <!-- Monogram JG -->
+  <text x="165" y="215" font-family="Playfair Display, Georgia, serif" font-size="160" font-weight="400" fill="url(#roseGold)" text-anchor="end">J</text>
+  <text x="175" y="215" font-family="Playfair Display, Georgia, serif" font-size="160" font-weight="400" fill="url(#roseGold)" text-anchor="start">G</text>
+
+  <!-- STUDIO divider lines and text -->
+  <line x1="90" y1="248" x2="145" y2="248" stroke="url(#roseGold)" stroke-width="1.5"/>
+  <text x="200" y="252" font-family="Montserrat, Arial, sans-serif" font-size="17" font-weight="500" letter-spacing="7" fill="url(#roseGold)" text-anchor="middle">STUDIO</text>
+  <line x1="255" y1="248" x2="310" y2="248" stroke="url(#roseGold)" stroke-width="1.5"/>
+
+  <!-- JÚLIA GATTI Name -->
+  <text x="200" y="292" font-family="Playfair Display, Georgia, serif" font-size="34" font-weight="600" letter-spacing="4" fill="url(#roseGold)" text-anchor="middle">JÚLIA GATTI</text>
+
+  <!-- EXTENSÃO DE CÍLIOS divider and subtitle -->
+  <line x1="115" y1="306" x2="190" y2="306" stroke="url(#roseGold)" stroke-width="1.5"/>
+  <circle cx="200" cy="306" r="3" fill="url(#roseGold)"/>
+  <line x1="210" y1="306" x2="285" y2="306" stroke="url(#roseGold)" stroke-width="1.5"/>
+
+  <text x="200" y="327" font-family="Montserrat, Arial, sans-serif" font-size="13" font-weight="500" letter-spacing="6" fill="url(#roseGold)" text-anchor="middle">EXTENSÃO DE CÍLIOS</text>
+</svg>

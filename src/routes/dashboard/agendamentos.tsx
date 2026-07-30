@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal, Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Search, SlidersHorizontal, Plus, MessageCircle } from "lucide-react";
 
 import { PageShell } from "@/components/page-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,12 +19,12 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { AppointmentDrawer } from "@/components/appointment-drawer";
 import {
-  appointments,
   brl,
   formatDateBR,
   type Appointment,
   type Status,
 } from "@/lib/mock-data";
+import { getAppointments } from "@/lib/db-service";
 
 export const Route = createFileRoute("/dashboard/agendamentos")({
   head: () => ({
@@ -53,13 +53,33 @@ const filters: { key: Status | "todos"; label: string }[] = [
 ];
 
 function AgendamentosPage() {
+  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status | "todos">("todos");
   const [selected, setSelected] = useState<Appointment | null>(null);
 
+  const loadData = async () => {
+    try {
+      const data = await getAppointments();
+      setAppointmentsList(data);
+    } catch (err) {
+      console.error("Erro ao carregar agendamentos:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleStatusChange = (id: string, newStatus: Status) => {
+    setAppointmentsList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+    );
+  };
+
   const rows = useMemo(
     () =>
-      appointments
+      appointmentsList
         .filter((a) => (status === "todos" ? true : a.status === status))
         .filter((a) =>
           `${a.clientName} ${a.service} ${a.professional}`
@@ -67,7 +87,7 @@ function AgendamentosPage() {
             .includes(query.toLowerCase()),
         )
         .sort((a, b) => (a.date + a.time < b.date + b.time ? 1 : -1)),
-    [query, status],
+    [appointmentsList, query, status],
   );
 
   return (
@@ -119,6 +139,7 @@ function AgendamentosPage() {
                   <TableHead className="hidden sm:table-cell">Hora</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Notificar</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,6 +168,24 @@ function AgendamentosPage() {
                       <StatusBadge status={a.status} />
                     </TableCell>
                     <TableCell className="text-right font-semibold">{brl(a.price)}</TableCell>
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full h-8 text-emerald-600 border-emerald-300 hover:bg-emerald-50 gap-1 text-xs"
+                        asChild
+                      >
+                        <a
+                          href={`https://wa.me/55${a.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                            `Olá, ${a.clientName}! Confirmando seu horário de ${a.service} no Studio Júlia Gatti para ${formatDateBR(a.date)} às ${a.time} ✨`
+                          )}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <MessageCircle className="size-3.5 fill-emerald-500/20" /> WhatsApp
+                        </a>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -168,6 +207,7 @@ function AgendamentosPage() {
         appointment={selected}
         open={!!selected}
         onOpenChange={(v) => !v && setSelected(null)}
+        onStatusChange={handleStatusChange}
       />
     </PageShell>
   );

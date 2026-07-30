@@ -78,24 +78,17 @@ export type Professional = {
 export const professionals: Professional[] = [
   {
     id: "p1",
-    name: "Camila Duarte",
-    role: "Lash Designer Master",
-    avatar: "https://i.pravatar.cc/160?img=45",
+    name: "Júlia Gatti",
+    role: "Master Lash Designer & Fundadora",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
     rating: 5.0,
   },
   {
     id: "p2",
-    name: "Rafaela Nunes",
-    role: "Especialista em Volume Russo",
-    avatar: "https://i.pravatar.cc/160?img=32",
+    name: "Equipe Studio Júlia Gatti",
+    role: "Lash Designer Especialista",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&q=80",
     rating: 4.9,
-  },
-  {
-    id: "p3",
-    name: "Bianca Moreira",
-    role: "Brow & Lash Artist",
-    avatar: "https://i.pravatar.cc/160?img=27",
-    rating: 4.8,
   },
 ];
 
@@ -475,14 +468,14 @@ export const transactions: Transaction[] = [
 ];
 
 export const studio = {
-  name: "Lumière Lash Studio",
-  tagline: "Extensão de cílios & design de olhar",
-  rating: 4.9,
-  reviews: 328,
-  address: "Rua Oscar Freire, 1042 · Jardins, São Paulo",
-  mapsUrl: "https://maps.google.com/?q=Rua+Oscar+Freire,+1042,+Jardins,+São+Paulo",
-  instagram: "@lumiere.lash",
-  whatsapp: "(11) 98812-0000",
+  name: "Studio Júlia Gatti",
+  tagline: "Extensão de Cílios",
+  rating: 5.0,
+  reviews: 142,
+  address: "Baixada Santista · São Paulo",
+  mapsUrl: "https://maps.google.com/?q=Studio+Julia+Gatti",
+  instagram: "@studiojuliagatti",
+  whatsapp: "(13) 99117-6958",
   hours: [
     { day: "Segunda", time: "09:00 – 19:00" },
     { day: "Terça", time: "09:00 – 19:00" },

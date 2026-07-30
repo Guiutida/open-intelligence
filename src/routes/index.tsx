@@ -1,377 +1,474 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { useState, useEffect } from "react";
 import {
   Star,
   MapPin,
   Instagram,
+  Facebook,
   MessageCircle,
   Sparkles,
   Clock,
-  ArrowRight,
-  ShieldCheck,
+  CalendarDays,
+  User,
   ExternalLink,
   Navigation,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { brlExact, professionals, services, studio } from "@/lib/mock-data";
-import { WhatsappFab } from "@/components/whatsapp-fab";
+import { brlExact } from "@/lib/mock-data";
+import {
+  getServices,
+  getStudioSettings,
+  getProfessionals,
+  type Service,
+  type StudioInfo,
+  type Professional,
+} from "@/lib/db-service";
 import { waLink } from "@/lib/studio-settings";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lumière Lash Studio · Agende seu olhar" },
+      { title: "Studio Júlia Gatti · Extensão de Cílios" },
       {
         name: "description",
         content:
-          "Studio boutique de extensão de cílios nos Jardins, São Paulo. Agende online em menos de um minuto.",
+          "Studio especializado em extensão de cílios. Agende online o seu horário em menos de um minuto.",
       },
-      { property: "og:title", content: "Lumière Lash Studio · Agende seu olhar" },
+      { property: "og:title", content: "Studio Júlia Gatti · Extensão de Cílios" },
       {
         property: "og:description",
         content:
-          "Studio boutique de extensão de cílios nos Jardins, São Paulo. Agende online em menos de um minuto.",
+          "Studio especializado em extensão de cílios. Agende online o seu horário em menos de um minuto.",
       },
-      { property: "og:image", content: studio.cover },
-      { name: "twitter:image", content: studio.cover },
+      { property: "og:image", content: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&q=75" },
+      { name: "twitter:image", content: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&q=75" },
     ],
   }),
   component: PublicPage,
 });
 
+const defaultInfo: StudioInfo = {
+  studio_name: "Studio Júlia Gatti",
+  tagline: "Extensão de Cílios",
+  whatsapp: "(13) 99117-6958",
+  instagram: "@studiojuliagatti",
+  facebook: "",
+  address: "Baixada Santista · São Paulo",
+  maps_url: "https://maps.google.com/?q=Studio+Julia+Gatti",
+  cover_url: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600&q=75",
+  logo_url: "",
+  rating: "5.0",
+  reviews: "0",
+  hours: [
+    { day: "Segunda", time: "09:00 – 19:00" },
+    { day: "Terça", time: "09:00 – 19:00" },
+    { day: "Quarta", time: "09:00 – 20:00" },
+    { day: "Quinta", time: "09:00 – 20:00" },
+    { day: "Sexta", time: "09:00 – 20:00" },
+    { day: "Sábado", time: "09:00 – 16:00" },
+    { day: "Domingo", time: "Fechado" },
+  ],
+};
+
 function PublicPage() {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const [loadingPros, setLoadingPros] = useState(true);
+  const [info, setInfo] = useState<StudioInfo>(defaultInfo);
+
+  useEffect(() => {
+    getServices().then((data) => {
+      setServices(data);
+      setLoadingServices(false);
+    });
+    getProfessionals().then((data) => {
+      setProfessionals(data);
+      setLoadingPros(false);
+    });
+    getStudioSettings().then(setInfo);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-transparent">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <span className="flex items-center gap-2 rounded-full bg-background/70 px-3 py-1.5 backdrop-blur-md">
-            <Sparkles className="size-4 text-gold" />
-            <span className="text-display text-sm font-semibold">Lumière</span>
-          </span>
-          <Button size="sm" variant="secondary" className="rounded-full" asChild>
-            <Link to="/dashboard">Área da profissional</Link>
-          </Button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background flex flex-col justify-between">
+      <div>
+        {/* Barra superior transparente */}
+        <header className="absolute inset-x-0 top-0 z-40 bg-transparent text-white">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+            <span className="flex items-center gap-2 font-semibold tracking-wide text-sm drop-shadow-md">
+              <Sparkles className="size-4 text-amber-300" /> {info.studio_name}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-white bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium gap-1.5 shadow-sm"
+              asChild
+            >
+              <Link to="/dashboard">
+                <User className="size-4" /> Área do Cliente / Gestor
+              </Link>
+            </Button>
+          </div>
+        </header>
 
-      <section className="relative">
-        <div className="relative h-[300px] overflow-hidden sm:h-[380px]">
-          <img
-            src={studio.cover}
-            alt="Interior do Lumière Lash Studio"
-            className="size-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-background/20" />
-        </div>
+        {/* Hero Banner com Foto de Fundo e Card Flutuante Estilo Referência */}
+        <section className="relative">
+          <div className="relative h-[220px] sm:h-[280px] overflow-hidden">
+            <img
+              src={info.cover_url}
+              alt="Background do Studio"
+              className="size-full object-cover filter brightness-[0.9] blur-[2px]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
+          </div>
 
-        <div className="mx-auto -mt-24 max-w-6xl px-4 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-3xl border bg-card p-6 shadow-[var(--shadow-lift)] sm:p-8"
-          >
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-end">
-              <span className="grid size-20 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg sm:size-24">
-                <Sparkles className="size-8 text-gold" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <Badge className="mb-2 rounded-full bg-gold/15 text-foreground hover:bg-gold/20">
-                  Studio boutique
-                </Badge>
-                <h1 className="text-3xl font-semibold sm:text-4xl">{studio.name}</h1>
-                <p className="mt-1 text-muted-foreground">{studio.tagline}</p>
-
-                <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-                  <span className="inline-flex items-center gap-1.5 font-semibold">
-                    <Star className="size-4 fill-gold text-gold" />
-                    {studio.rating}
-                    <span className="font-normal text-muted-foreground">
-                      ({studio.reviews} avaliações)
-                    </span>
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                    <MapPin className="size-4" /> {studio.address}
-                  </span>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" className="rounded-full" asChild>
-                    <a
-                      href={`https://instagram.com/${studio.instagram.replace("@", "")}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <Instagram className="size-4" /> {studio.instagram}
-                    </a>
-                  </Button>
-                  <Button variant="outline" size="sm" className="rounded-full" asChild>
-                    <a
-                      href={waLink(studio.whatsapp, "Oi! Vim pelo site do studio ✨")}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <MessageCircle className="size-4" /> {studio.whatsapp}
-                    </a>
-                  </Button>
+          <div className="mx-auto -mt-24 max-w-3xl px-4 sm:px-6 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="rounded-3xl border bg-card p-6 sm:p-10 shadow-xl text-center relative pt-14"
+            >
+              {/* Logo Circular Centralizado Flutuando no Topo */}
+              <div className="absolute -top-14 left-1/2 -translate-x-1/2">
+                <div className="grid size-28 place-items-center rounded-full border-4 border-card bg-white shadow-xl overflow-hidden p-1">
+                  <img
+                    src={info.logo_url || "/julia-gatti-logo.svg"}
+                    alt={`${info.studio_name} Logo`}
+                    className="size-full object-contain"
+                  />
                 </div>
               </div>
 
-              <Button
-                size="lg"
-                className="group h-14 w-full rounded-2xl text-base shadow-lg transition-all hover:-translate-y-0.5 sm:w-auto"
-                asChild
-              >
-                <Link to="/agendar">
-                  Agendar agora
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+              <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+                {info.studio_name}
+              </h1>
+              <p className="mt-1 text-sm sm:text-base text-muted-foreground font-medium">
+                {info.tagline} · Agende seu horário
+              </p>
 
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold">Nossos serviços</h2>
-            <p className="text-sm text-muted-foreground">
-              Técnicas premium com materiais hipoalergênicos importados.
+              {/* Botão de Destaque Agendar */}
+              <div className="mt-5 flex justify-center">
+                <Button
+                  size="lg"
+                  className="h-12 rounded-full bg-[#F87171] hover:bg-[#ef4444] text-white font-semibold px-8 shadow-md transition-transform hover:scale-105 gap-2"
+                  asChild
+                >
+                  <Link to="/agendar">
+                    <CalendarDays className="size-5" />
+                    Agendar Agora
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Redes Sociais & Contatos na Parte Superior (Estilo Pílulas com Ícones Coloridos) */}
+              <div className="mt-6 pt-5 border-t">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                  Redes Sociais & Contato
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {/* Instagram Pill - só mostra se tiver */}
+                  {info.instagram && (
+                    <a
+                      href={`https://instagram.com/${info.instagram.replace("@", "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-800 shadow-sm transition-all hover:shadow-md hover:border-pink-300 hover:scale-105"
+                    >
+                      <span className="grid size-6 place-items-center rounded-full bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 text-white">
+                        <Instagram className="size-3.5" />
+                      </span>
+                      <span>{info.instagram}</span>
+                    </a>
+                  )}
+
+                  {/* WhatsApp Pill */}
+                  {info.whatsapp && (
+                    <a
+                      href={waLink(info.whatsapp, "Olá! Vim pelo site do studio ✨")}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-800 shadow-sm transition-all hover:shadow-md hover:border-green-300 hover:scale-105"
+                    >
+                      <span className="grid size-6 place-items-center rounded-full bg-[#25D366] text-white">
+                        <MessageCircle className="size-3.5 fill-white/20" />
+                      </span>
+                      <span>{info.whatsapp}</span>
+                    </a>
+                  )}
+
+                  {/* Facebook Pill - só mostra se tiver */}
+                  {info.facebook && (
+                    <a
+                      href={`https://facebook.com/${info.facebook.replace("@", "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-xs sm:text-sm font-semibold text-slate-800 shadow-sm transition-all hover:shadow-md hover:border-blue-300 hover:scale-105"
+                    >
+                      <span className="grid size-6 place-items-center rounded-full bg-[#1877F2] text-white">
+                        <Facebook className="size-3.5 fill-white" />
+                      </span>
+                      <span>{info.facebook}</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Avaliações e Endereço */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs sm:text-sm text-muted-foreground border-t pt-4">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-slate-700">
+                  <Star className="size-4 fill-amber-400 text-amber-400" />
+                  {info.rating} ({info.reviews} avaliações)
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin className="size-4 text-[#F87171]" /> {info.address}
+                </span>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Nossos Serviços */}
+        <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Nossos Serviços
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Escolha o procedimento ideal e agende com nossas especialistas.
             </p>
           </div>
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((s, i) => (
-            <motion.div
-              key={s.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-            >
-              <Card className="group h-full overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]">
-                <span className="block h-1.5" style={{ backgroundColor: s.color }} />
-                <CardContent className="flex h-full flex-col p-5">
-                  <h3 className="text-lg font-semibold">{s.name}</h3>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {s.description}
-                  </p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-display text-lg font-semibold">{brlExact(s.price)}</span>
-                    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Clock className="size-3.5" /> {s.duration} min
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      <section className="border-y bg-muted/30">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-          <h2 className="text-2xl font-semibold">Quem vai cuidar de você</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            {professionals.map((p) => (
-              <Card
-                key={p.id}
-                className="rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]"
-              >
-                <CardContent className="flex items-center gap-4 p-5">
-                  <Avatar className="size-14 ring-2 ring-gold/40">
-                    <AvatarImage src={p.avatar} alt={p.name} />
-                    <AvatarFallback>{p.name.slice(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{p.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{p.role}</p>
-                    <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold">
-                      <Star className="size-3 fill-gold text-gold" /> {p.rating}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold">Localização e horários</h2>
-          <p className="text-sm text-muted-foreground">Venha nos visitar no coração dos Jardins.</p>
-        </div>
-
-        <div className="grid items-stretch gap-4 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.4 }}
-            className="h-full"
-          >
-            <Card className="group relative h-full overflow-hidden rounded-2xl p-0">
-              <a
-                href={studio.mapsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="absolute inset-0 z-10"
-                aria-label="Abrir localização no Google Maps"
-              />
-                <div className="relative h-full min-h-[420px] w-full overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1200&q=75"
-                    alt="Vista urbana da região dos Jardins, São Paulo"
-                    className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <div className="flex items-start justify-between gap-4">
+          {loadingServices ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="size-8 animate-spin text-[#F87171]" />
+            </div>
+          ) : services.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-16 text-center">
+              <Sparkles className="size-10 text-[#F87171]/40" />
+              <p className="text-lg font-semibold text-slate-700">Em breve!</p>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Os serviços estão sendo configurados. Entre em contato pelo WhatsApp para agendar.
+              </p>
+              <Button asChild className="mt-2 rounded-full bg-[#F87171] hover:bg-[#f05f5f] text-white">
+                <a href={waLink(info.whatsapp, "Olá! Vim pelo site e gostaria de agendar ✨")} target="_blank" rel="noreferrer">
+                  <MessageCircle className="size-4 mr-2" /> Falar pelo WhatsApp
+                </a>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {services.map((s) => (
+                <Card
+                  key={s.id}
+                  className="group h-full rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-md border"
+                >
+                  <CardContent className="flex flex-col justify-between h-full p-5">
                     <div>
-                      <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
-                        <MapPin className="size-4 text-gold" />
-                        Endereço
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-slate-900">{s.name}</h3>
+                        <Badge variant="outline" className="shrink-0 rounded-full font-semibold border-[#F87171]/40 text-[#F87171]">
+                          {brlExact(s.price)}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                        {s.description}
                       </p>
-                      <p className="mt-1 text-lg font-semibold">{studio.address}</p>
-                      <p className="mt-0.5 text-sm text-muted-foreground">Estacionamento conveniado ao lado.</p>
                     </div>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-3 py-1 text-xs font-semibold text-foreground transition-colors group-hover:bg-gold/25">
-                      Como chegar <ExternalLink className="size-3.5" />
-                    </span>
+                    <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs">
+                      <span className="inline-flex items-center gap-1 text-muted-foreground">
+                        <Clock className="size-3.5" /> {s.duration} min
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-8 rounded-full text-[#F87171] hover:text-[#F87171] hover:bg-[#F87171]/10 font-semibold" asChild>
+                        <Link to="/agendar" search={{ serviceId: s.id }}>Escolher &rarr;</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Nossa Equipe / Profissionais */}
+        {!loadingPros && professionals.length > 0 && (
+          <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 border-t">
+            <div className="mb-8 text-center">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                {professionals.length === 1 ? "Atendimento Exclusivo" : "Nossa Equipe"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground max-w-lg mx-auto">
+                {professionals.length === 1
+                  ? `Procedimentos realizados exclusivamente por ${professionals[0].name}, garantindo atendimento personalizado e de alta precisão.`
+                  : "Escolha a profissional de sua preferência para o seu procedimento."}
+              </p>
+            </div>
+
+            {professionals.length === 1 ? (
+              <div className="flex justify-center">
+                <Card className="rounded-3xl border bg-white p-8 shadow-sm text-center max-w-md w-full transition-transform hover:scale-[1.01]">
+                  <div className="mx-auto size-28 rounded-full bg-[#F87171]/15 p-1 border-2 border-[#F87171]/40 shadow-md">
+                    <img
+                      src={professionals[0].avatar}
+                      alt={professionals[0].name}
+                      className="size-full rounded-full object-cover"
+                    />
                   </div>
+                  <h3 className="mt-4 text-xl font-bold text-slate-900">{professionals[0].name}</h3>
+                  <p className="text-xs font-semibold text-[#F87171] uppercase tracking-wider mt-1">
+                    {professionals[0].role}
+                  </p>
+                  <div className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 px-4 py-1.5 rounded-full border border-amber-200 shadow-sm">
+                    <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                    <span>{professionals[0].rating.toFixed(1)} · Especialista Master & Fundadora</span>
+                  </div>
+                </Card>
+              </div>
+            ) : (
+              <Card className="rounded-3xl border bg-white p-8 sm:p-10 shadow-sm">
+                <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-14">
+                  {professionals.map((p) => (
+                    <div key={p.id} className="flex flex-col items-center text-center group cursor-pointer">
+                      <div className="size-28 sm:size-32 rounded-full bg-[#F87171]/15 p-1 border-2 border-[#F87171]/40 shadow-md transition-transform duration-300 group-hover:scale-105">
+                        <img
+                          src={p.avatar}
+                          alt={p.name}
+                          className="size-full rounded-full object-cover"
+                        />
+                      </div>
+                      <h3 className="mt-4 font-bold text-slate-900 text-base group-hover:text-[#F87171] transition-colors">
+                        {p.name}
+                      </h3>
+                      <p className="text-xs text-muted-foreground max-w-[150px] mt-1 font-medium">
+                        {p.role}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </section>
+        )}
+
+        {/* Localização e Horários */}
+        <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 border-t">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Localização e horários
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Venha nos visitar.
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2 items-stretch">
+            {/* Card com Foto da Cidade / Mapa e Endereço */}
+            <Card className="group relative h-full min-h-[380px] overflow-hidden rounded-3xl p-0 border shadow-sm">
+              <img
+                src="https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1200&q=75"
+                alt="Vista urbana dos Jardins, São Paulo"
+                className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white flex flex-col justify-between gap-4">
+                <div>
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-300">
+                    <MapPin className="size-4" /> Endereço
+                  </span>
+                  <h3 className="mt-1 text-lg sm:text-xl font-bold leading-tight">
+                    {info.address}
+                  </h3>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md border border-white/20 text-xs font-medium gap-1.5"
+                    asChild
+                  >
+                    <a href={info.maps_url} target="_blank" rel="noreferrer">
+                      Como chegar <ExternalLink className="size-3.5" />
+                    </a>
+                  </Button>
                 </div>
               </div>
             </Card>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="h-full"
-          >
-            <Card className="h-full rounded-2xl">
-              <CardContent className="flex h-full flex-col p-5">
-                <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
-                  <Clock className="size-4 text-gold" />
-                  Horário de funcionamento
-                </p>
-                <ul className="mt-4 flex-1 space-y-2">
-                  {studio.hours.map((h, i) => {
+            {/* Card com Horários de Funcionamento */}
+            <Card className="rounded-3xl border bg-card p-6 sm:p-8 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-900 mb-5">
+                  <Clock className="size-4 text-amber-500" />
+                  <span>Horário de funcionamento</span>
+                </div>
+
+                <ul className="space-y-2 text-sm">
+                  {info.hours.map((h, i) => {
                     const today = new Date().getDay();
                     const dayIndex = i === 6 ? 0 : i + 1;
                     const isToday = dayIndex === today;
+
                     return (
                       <li
                         key={h.day}
-                        className={`flex items-center justify-between rounded-xl px-3 py-2 text-sm ${
-                          isToday ? "bg-gold/10 font-medium text-foreground" : "text-muted-foreground"
+                        className={`flex items-center justify-between rounded-xl px-4 py-2.5 transition-colors ${
+                          isToday
+                            ? "bg-amber-500/10 font-bold text-amber-900 border border-amber-500/20"
+                            : "text-slate-600 hover:bg-slate-50"
                         }`}
                       >
                         <span className="inline-flex items-center gap-2">
-                          {isToday && <Navigation className="size-3 text-gold" />}
+                          {isToday && <Navigation className="size-3.5 text-amber-600" />}
                           {h.day}
                         </span>
-                        <span className={isToday ? "font-semibold text-foreground" : ""}>{h.time}</span>
+                        <span className={isToday ? "font-extrabold text-slate-900" : "font-medium"}>
+                          {h.time}
+                        </span>
                       </li>
                     );
                   })}
                 </ul>
-                <Button variant="outline" className="mt-4 w-full rounded-xl" asChild>
-                  <a href={studio.mapsUrl} target="_blank" rel="noreferrer">
-                    <Navigation className="size-4" /> Como chegar
+              </div>
+
+              <div className="mt-6 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full rounded-full h-11 border-slate-200 hover:bg-slate-50 text-slate-800 font-semibold gap-2"
+                  asChild
+                >
+                  <a href={info.maps_url} target="_blank" rel="noreferrer">
+                    <Navigation className="size-4 text-amber-600" />
+                    Como chegar
                   </a>
                 </Button>
-              </CardContent>
+              </div>
             </Card>
-          </motion.div>
-        </div>
-      </section>
+          </div>
+        </section>
+      </div>
 
-      {/* 1. Hero */}
-      <section className="mx-auto max-w-2xl px-6 pt-24 pb-20 text-center sm:pt-28 sm:pb-24">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <ShieldCheck className="mx-auto size-7 text-gold" strokeWidth={1.6} />
-          <h2 className="text-display mt-6 text-[28px] leading-tight font-bold tracking-tight sm:text-[32px]">
-            Seu olhar merece o melhor
-          </h2>
-          <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-muted-foreground">
-            Agende em menos de um minuto e receba a confirmação no{" "}
-            <span className="font-medium text-link-blue">WhatsApp</span> na hora.
-          </p>
-          <Button
-            size="lg"
-            className="mt-8 h-12 rounded-full bg-foreground px-8 text-background transition-transform hover:-translate-y-0.5 hover:bg-foreground/90"
-            asChild
-          >
-            <Link to="/agendar">Agendar agora</Link>
-          </Button>
-        </motion.div>
-      </section>
-
-      {/* 2. Divisor */}
-      <div className="mx-auto max-w-3xl border-t border-border/70" />
-
-      {/* 3. Selo da marca + 4. Banner azul */}
-      <section className="mx-auto max-w-3xl px-6 py-20 text-center sm:py-24">
-        <span className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold tracking-[0.14em] uppercase text-muted-foreground">
-          <Sparkles className="size-3.5 text-gold" /> TecMash
-        </span>
-
-        <div className="mt-8 overflow-hidden rounded-3xl bg-brand-blue px-7 py-10 text-left text-brand-blue-foreground sm:px-12 sm:py-14">
-          <h2 className="text-display max-w-xl text-[28px] leading-tight font-bold sm:text-[34px]">
-            Facilite agendamento com a TecMash
-          </h2>
-          <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-brand-blue-foreground/80">
-            Sistemas de agendamento online sob medida para studios, clínicas e salões. Sua agenda
-            cheia, sem trabalho manual.
-          </p>
-        </div>
-
-        <p className="mx-auto mt-8 max-w-md text-[15px] leading-relaxed text-muted-foreground">
-          Fale com a TecMash e tenha a sua página de agendamentos no ar em poucos dias.
-        </p>
-
-        <Button
-          size="lg"
-          className="group mt-6 h-12 rounded-full bg-foreground px-8 text-background transition-transform hover:-translate-y-0.5 hover:bg-foreground/90"
-          asChild
-        >
+      {/* Rodapé Escuro */}
+      <footer className="w-full bg-neutral-900 py-6 text-center text-sm font-medium text-neutral-300 border-t border-neutral-800">
+        <div className="mx-auto flex items-center justify-center gap-2">
+          <span>Facilite agendamentos com</span>
           <a
-            href={waLink("(11) 90000-0000", "Olá TecMash! Quero um sistema de agendamento.")}
+            href="https://tecmash.com.br/"
             target="_blank"
             rel="noreferrer"
+            className="inline-flex items-center gap-2 font-extrabold text-white text-base tracking-tight hover:underline transition-all group"
           >
-            Quero para o meu negócio
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+            <img src="/tecmash-logo.svg" alt="TecMash Logo" className="h-5 w-auto transition-transform group-hover:scale-110" />
+            <span>TecMash</span>
           </a>
-        </Button>
-      </section>
-
-      {/* 5. Divisor */}
-      <div className="mx-auto max-w-3xl border-t border-border/70" />
-
-      {/* 6. Rodapé */}
-      <footer className="px-6 py-12 text-center text-xs leading-relaxed text-muted-foreground">
-        <p>© 2026 {studio.name} · {studio.address}</p>
-        <p className="mt-1">Feito com ♥ pela TecMash</p>
+        </div>
       </footer>
-
-
-      <WhatsappFab />
     </div>
   );
 }

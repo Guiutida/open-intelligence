@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/status-badge";
-import { brlExact, formatDateBR, type Appointment } from "@/lib/mock-data";
+import { brlExact, formatDateBR, type Appointment, type Status } from "@/lib/mock-data";
+import { updateAppointmentStatus } from "@/lib/db-service";
 
 function Row({
   icon: Icon,
@@ -41,13 +42,35 @@ export function AppointmentDrawer({
   appointment,
   open,
   onOpenChange,
+  onStatusChange,
 }: {
   appointment: Appointment | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  onStatusChange?: (id: string, newStatus: Status) => void;
 }) {
   if (!appointment) return null;
   const a = appointment;
+
+  const handleUpdateStatus = async (newStatus: Status) => {
+    try {
+      await updateAppointmentStatus(a.id, newStatus);
+      if (onStatusChange) {
+        onStatusChange(a.id, newStatus);
+      }
+      if (newStatus === "concluido") {
+        toast.success("Atendimento concluído com sucesso!", {
+          description: `${a.clientName} · ${a.service}`,
+        });
+      } else if (newStatus === "cancelado") {
+        toast.error("Agendamento marcado como cancelado", { description: a.clientName });
+      }
+      onOpenChange(false);
+    } catch (e) {
+      console.error("Erro ao atualizar status", e);
+      toast.error("Erro ao atualizar status do agendamento.");
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -93,12 +116,7 @@ export function AppointmentDrawer({
           <div className="grid gap-2">
             <Button
               className="h-11 rounded-xl"
-              onClick={() => {
-                toast.success("Atendimento concluído", {
-                  description: `${a.clientName} · ${a.service}`,
-                });
-                onOpenChange(false);
-              }}
+              onClick={() => handleUpdateStatus("concluido")}
             >
               Concluir atendimento
             </Button>
@@ -106,17 +124,14 @@ export function AppointmentDrawer({
               <Button
                 variant="outline"
                 className="h-11 rounded-xl"
-                onClick={() => toast.info("Modo de edição aberto (demonstração).")}
+                onClick={() => handleUpdateStatus("confirmado")}
               >
-                Editar
+                Confirmar
               </Button>
               <Button
                 variant="outline"
                 className="h-11 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => {
-                  toast.error("Agendamento cancelado", { description: a.clientName });
-                  onOpenChange(false);
-                }}
+                onClick={() => handleUpdateStatus("cancelado")}
               >
                 Cancelar
               </Button>
@@ -127,3 +142,4 @@ export function AppointmentDrawer({
     </Sheet>
   );
 }
+

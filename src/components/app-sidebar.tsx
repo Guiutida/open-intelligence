@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ClipboardList,
   Users,
+  UserCheck,
   Sparkles,
   Wallet,
   Settings,
@@ -30,6 +31,7 @@ const items = [
   { title: "Agendamentos", url: "/dashboard/agendamentos", icon: ClipboardList },
   { title: "Clientes", url: "/dashboard/clientes", icon: Users },
   { title: "Serviços", url: "/dashboard/servicos", icon: Sparkles },
+  { title: "Equipe", url: "/dashboard/equipe", icon: UserCheck },
   { title: "Financeiro", url: "/dashboard/financeiro", icon: Wallet },
   { title: "Configurações", url: "/dashboard/configuracoes", icon: Settings },
 ] as const;

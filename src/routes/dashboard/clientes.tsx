@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Search, Filter, Plus, Phone, Mail, Sparkles } from "lucide-react";
 
@@ -33,7 +33,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { clients, brlExact, formatDateBR, type Client } from "@/lib/mock-data";
+import { brlExact, formatDateBR, type Client } from "@/lib/mock-data";
+import { getClients } from "@/lib/db-service";
 
 export const Route = createFileRoute("/dashboard/clientes")({
   head: () => ({
@@ -56,16 +57,34 @@ export const Route = createFileRoute("/dashboard/clientes")({
 const tags = ["VIP", "Recorrente", "Nova"] as const;
 
 function ClientesPage() {
+  const [clientsList, setClientsList] = useState<Client[]>([]);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<string[]>([]);
   const [current, setCurrent] = useState<Client | null>(null);
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await getClients();
+        setClientsList(data);
+      } catch (err) {
+        console.error("Erro ao carregar clientes:", err);
+      }
+    }
+    loadData();
+  }, []);
+
   const rows = useMemo(
     () =>
-      clients
-        .filter((c) => (active.length ? active.includes(c.tag) : true))
-        .filter((c) => `${c.name} ${c.phone}`.toLowerCase().includes(query.toLowerCase())),
-    [query, active],
+      clientsList.filter((c) => {
+        const matchQuery =
+          c.name.toLowerCase().includes(query.toLowerCase()) ||
+          c.phone.includes(query) ||
+          c.email.toLowerCase().includes(query.toLowerCase());
+        const matchTag = active.length === 0 || active.includes(c.tag);
+        return matchQuery && matchTag;
+      }),
+    [clientsList, query, active],
   );
 
   return (

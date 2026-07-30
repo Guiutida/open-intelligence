@@ -1,0 +1,10 @@
+<svg width="200" height="160" viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left column -->
+  <path d="M37 73.5L60 87V160H37V73.5Z" fill="#9DA5E8"/>
+  <!-- Right column -->
+  <path d="M163 73.5L140 87V160H163V73.5Z" fill="#9DA5E8"/>
+  <!-- Center column -->
+  <path d="M88 69L100 62L112 69V160H88V69Z" fill="#5C55F7"/>
+  <!-- Top Arrow / Roof -->
+  <path d="M100 20L163 56L140 69.5L100 46L60 69.5L37 56L100 20Z" fill="#5C55F7"/>
+</svg>

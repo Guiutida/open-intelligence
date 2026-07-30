@@ -109,12 +109,12 @@ export function Topbar() {
           <DropdownMenuTrigger asChild>
             <button className="ml-1 flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-muted">
               <Avatar className="size-8 ring-2 ring-gold/40">
-                <AvatarImage src="https://i.pravatar.cc/160?img=45" alt="Camila Duarte" />
-                <AvatarFallback>CD</AvatarFallback>
+                <AvatarImage src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80" alt="Júlia Gatti" />
+                <AvatarFallback>JG</AvatarFallback>
               </Avatar>
               <span className="hidden text-left leading-tight lg:block">
-                <span className="block text-xs font-semibold">Camila Duarte</span>
-                <span className="block text-[11px] text-muted-foreground">Lash Designer</span>
+                <span className="block text-xs font-semibold">Júlia Gatti</span>
+                <span className="block text-[11px] text-muted-foreground">Master Lash</span>
               </span>
             </button>
           </DropdownMenuTrigger>

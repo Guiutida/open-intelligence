@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ptBR } from "date-fns/locale";
 import { CalendarX2, Clock } from "lucide-react";
@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/status-badge";
 import { AppointmentDrawer } from "@/components/appointment-drawer";
-import { appointments, brl, type Appointment } from "@/lib/mock-data";
+import { brl, type Appointment, type Status } from "@/lib/mock-data";
+import { getAppointments } from "@/lib/db-service";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/dashboard/agenda")({
@@ -38,18 +39,38 @@ const toISO = (d: Date) =>
 const SLOTS = ["09:00", "10:30", "12:00", "14:00", "16:00"];
 
 function AgendaPage() {
-  const [date, setDate] = useState<Date>(new Date(2026, 6, 30));
+  const [appointmentsList, setAppointmentsList] = useState<Appointment[]>([]);
+  const [date, setDate] = useState<Date>(new Date());
   const [selected, setSelected] = useState<Appointment | null>(null);
+
+  const loadData = async () => {
+    try {
+      const data = await getAppointments();
+      setAppointmentsList(data);
+    } catch (e) {
+      console.error("Erro ao carregar agenda:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleStatusChange = (id: string, newStatus: Status) => {
+    setAppointmentsList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+    );
+  };
 
   const iso = toISO(date);
   const dayAppointments = useMemo(
-    () => appointments.filter((a) => a.date === iso),
-    [iso],
+    () => appointmentsList.filter((a) => a.date === iso),
+    [appointmentsList, iso],
   );
 
   const booked = useMemo(
-    () => new Set(appointments.map((a) => a.date)),
-    [],
+    () => new Set(appointmentsList.map((a) => a.date)),
+    [appointmentsList],
   );
 
   return (
@@ -171,6 +192,7 @@ function AgendaPage() {
         appointment={selected}
         open={!!selected}
         onOpenChange={(v) => !v && setSelected(null)}
+        onStatusChange={handleStatusChange}
       />
     </PageShell>
   );

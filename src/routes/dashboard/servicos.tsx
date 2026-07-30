@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Plus, Pencil, Trash2, Clock, Tag } from "lucide-react";
 import { toast } from "sonner";
@@ -29,7 +29,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { services as initialServices, brlExact, type Service } from "@/lib/mock-data";
+import { brlExact, type Service } from "@/lib/mock-data";
+import { getServices, createService } from "@/lib/db-service";
 
 export const Route = createFileRoute("/dashboard/servicos")({
   head: () => ({
@@ -50,10 +51,56 @@ export const Route = createFileRoute("/dashboard/servicos")({
 });
 
 function ServicosPage() {
-  const [list, setList] = useState<Service[]>(initialServices);
+  const [list, setList] = useState<Service[]>([]);
   const [editing, setEditing] = useState<Service | null>(null);
   const [removing, setRemoving] = useState<Service | null>(null);
   const [creating, setCreating] = useState(false);
+
+  const [newName, setNewName] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newDuration, setNewDuration] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+
+  const loadData = async () => {
+    try {
+      const data = await getServices();
+      setList(data);
+    } catch (err) {
+      console.error("Erro ao carregar serviços:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleCreate = async () => {
+    if (!newName.trim() || !newPrice || !newDuration) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    try {
+      const created = await createService({
+        name: newName,
+        price: Number(newPrice),
+        duration: Number(newDuration),
+        color: "var(--gold)",
+        description: newDesc,
+      });
+
+      setList((prev) => [created, ...prev]);
+      setCreating(false);
+      setNewName("");
+      setNewPrice("");
+      setNewDuration("");
+      setNewDesc("");
+      toast.success("Serviço cadastrado com sucesso!", { description: created.name });
+    } catch (e) {
+      console.error("Erro ao criar serviço:", e);
+      toast.error("Erro ao salvar o serviço.");
+    }
+  };
 
   const save = (s: Service) => {
     setList((prev) => prev.map((x) => (x.id === s.id ? s : x)));
@@ -80,34 +127,50 @@ function ServicosPage() {
             <div className="grid gap-4 py-2">
               <div className="grid gap-2">
                 <Label>Nome</Label>
-                <Input placeholder="Ex: Volume Egípcio" className="rounded-xl" />
+                <Input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Ex: Volume Egípcio"
+                  className="rounded-xl"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-2">
                   <Label>Preço (R$)</Label>
-                  <Input type="number" placeholder="200" className="rounded-xl" />
+                  <Input
+                    type="number"
+                    value={newPrice}
+                    onChange={(e) => setNewPrice(e.target.value)}
+                    placeholder="200"
+                    className="rounded-xl"
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label>Duração (min)</Label>
-                  <Input type="number" placeholder="120" className="rounded-xl" />
+                  <Input
+                    type="number"
+                    value={newDuration}
+                    onChange={(e) => setNewDuration(e.target.value)}
+                    placeholder="120"
+                    className="rounded-xl"
+                  />
                 </div>
               </div>
               <div className="grid gap-2">
                 <Label>Descrição</Label>
-                <Textarea placeholder="Breve descrição do procedimento" className="rounded-xl" />
+                <Textarea
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  placeholder="Breve descrição do procedimento"
+                  className="rounded-xl"
+                />
               </div>
             </div>
             <DialogFooter>
               <Button variant="outline" className="rounded-xl" onClick={() => setCreating(false)}>
                 Cancelar
               </Button>
-              <Button
-                className="rounded-xl"
-                onClick={() => {
-                  setCreating(false);
-                  toast.success("Serviço criado com sucesso!");
-                }}
-              >
+              <Button className="rounded-xl" onClick={handleCreate}>
                 Salvar serviço
               </Button>
             </DialogFooter>

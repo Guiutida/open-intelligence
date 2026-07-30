@@ -1,11 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Upload, Save, Clock, MessageCircle, QrCode, Palette, Bell, Building2 } from "lucide-react";
+import { Upload, Save, Clock, MessageCircle, QrCode, Palette, Bell, Building2, Loader2 } from "lucide-react";
 
 import { PageShell } from "@/components/page-shell";
 import { WhatsappFabView } from "@/components/whatsapp-fab";
 import { useStudioSettings, type FabStyle } from "@/lib/studio-settings";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { getStudioSettings, saveStudioSetting, type StudioInfo } from "@/lib/db-service";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -200,14 +202,53 @@ function FloatingButtonCard() {
 
 function ConfiguracoesPage() {
   const [dark, setDark] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [info, setInfo] = useState<StudioInfo>({
+    studio_name: "Studio Júlia Gatti",
+    tagline: "Extensão de Cílios",
+    whatsapp: "(13) 99117-6958",
+    instagram: "@studiojuliagatti",
+    facebook: "",
+    address: "Baixada Santista · São Paulo",
+    maps_url: "https://maps.google.com/?q=Studio+Julia+Gatti",
+    cover_url: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1600&q=75",
+    logo_url: "/julia-gatti-logo.svg",
+    rating: "5.0",
+    reviews: "0",
+    hours: [],
+  });
+
+  useEffect(() => {
+    getStudioSettings().then(setInfo);
+  }, []);
+
+  const handleSaveAll = async () => {
+    setSaving(true);
+    try {
+      await saveStudioSetting("studio_name", info.studio_name);
+      await saveStudioSetting("tagline", info.tagline);
+      await saveStudioSetting("whatsapp", info.whatsapp);
+      await saveStudioSetting("instagram", info.instagram);
+      await saveStudioSetting("address", info.address);
+      await saveStudioSetting("cover_url", info.cover_url);
+      await saveStudioSetting("logo_url", info.logo_url);
+      toast.success("Configurações salvas no banco com sucesso!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao salvar no Supabase.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <PageShell
       title="Configurações"
       description="Personalize o funcionamento e a identidade do seu studio."
       actions={
-        <Button className="rounded-xl" onClick={() => toast.success("Configurações salvas!")}>
-          <Save className="size-4" /> Salvar alterações
+        <Button className="rounded-xl" onClick={handleSaveAll} disabled={saving}>
+          {saving ? <Loader2 className="size-4 animate-spin mr-2" /> : <Save className="size-4 mr-2" />}
+          Salvar alterações
         </Button>
       }
     >
@@ -245,39 +286,65 @@ function ConfiguracoesPage() {
               <CardDescription>Informações exibidas na página pública.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="grid size-20 shrink-0 place-items-center rounded-2xl border border-dashed bg-muted/40 text-xs text-muted-foreground">
-                  Logo
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Logo do Studio (PNG/SVG)</Label>
+                  <ImageUpload
+                    value={info.logo_url}
+                    onChange={(url) => setInfo((prev) => ({ ...prev, logo_url: url }))}
+                    label="Enviar arquivo do logo"
+                  />
                 </div>
-                <div>
-                  <Button variant="outline" className="rounded-xl">
-                    <Upload className="size-4" /> Enviar logo
-                  </Button>
-                  <p className="mt-2 text-xs text-muted-foreground">PNG ou SVG até 2 MB.</p>
+                <div className="grid gap-2">
+                  <Label>Foto de Capa do Studio (Banner)</Label>
+                  <ImageUpload
+                    value={info.cover_url}
+                    onChange={(url) => setInfo((prev) => ({ ...prev, cover_url: url }))}
+                    aspectRatio="cover"
+                    label="Enviar imagem de capa"
+                  />
                 </div>
               </div>
               <Separator />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Nome do studio</Label>
-                  <Input defaultValue="Lumière Lash Studio" className="rounded-xl" />
+                  <Input
+                    value={info.studio_name}
+                    onChange={(e) => setInfo((prev) => ({ ...prev, studio_name: e.target.value }))}
+                    className="rounded-xl"
+                  />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Telefone</Label>
-                  <Input defaultValue="(11) 98812-0000" className="rounded-xl" />
-                </div>
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label>Endereço</Label>
+                  <Label>WhatsApp para Agendamentos e Notificações</Label>
                   <Input
-                    defaultValue="Rua Oscar Freire, 1042 · Jardins, São Paulo"
+                    value={info.whatsapp}
+                    onChange={(e) => setInfo((prev) => ({ ...prev, whatsapp: e.target.value }))}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Instagram (@usuario)</Label>
+                  <Input
+                    value={info.instagram}
+                    onChange={(e) => setInfo((prev) => ({ ...prev, instagram: e.target.value }))}
+                    className="rounded-xl"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Especialidade / Tagline</Label>
+                  <Input
+                    value={info.tagline}
+                    onChange={(e) => setInfo((prev) => ({ ...prev, tagline: e.target.value }))}
                     className="rounded-xl"
                   />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
-                  <Label>Descrição</Label>
-                  <Textarea
+                  <Label>Endereço Completo</Label>
+                  <Input
+                    value={info.address}
+                    onChange={(e) => setInfo((prev) => ({ ...prev, address: e.target.value }))}
                     className="rounded-xl"
-                    defaultValue="Studio boutique especializado em extensão de cílios e design de olhar."
                   />
                 </div>
               </div>
@@ -385,27 +452,26 @@ function ConfiguracoesPage() {
               <CardDescription>Como você aparece para suas clientes.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-5">
-              <div className="flex items-center gap-4">
-                <Avatar className="size-20 ring-2 ring-gold/40">
-                  <AvatarImage src="https://i.pravatar.cc/160?img=45" alt="Camila Duarte" />
-                  <AvatarFallback>CD</AvatarFallback>
-                </Avatar>
-                <Button variant="outline" className="rounded-xl">
-                  <Upload className="size-4" /> Alterar foto
-                </Button>
+              <div className="grid gap-2 sm:max-w-xs">
+                <Label>Foto de perfil (Avatar)</Label>
+                <ImageUpload
+                  value="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80"
+                  onChange={() => toast.info("Foto de perfil alterada com sucesso!")}
+                  label="Escolher foto de perfil"
+                />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Nome</Label>
-                  <Input defaultValue="Camila Duarte" className="rounded-xl" />
+                  <Input defaultValue="Júlia Gatti" className="rounded-xl" />
                 </div>
                 <div className="grid gap-2">
                   <Label>Especialidade</Label>
-                  <Input defaultValue="Lash Designer Master" className="rounded-xl" />
+                  <Input defaultValue="Master Lash Designer & Fundadora" className="rounded-xl" />
                 </div>
                 <div className="grid gap-2 sm:col-span-2">
                   <Label>E-mail</Label>
-                  <Input defaultValue="camila@lumierelash.com.br" className="rounded-xl" />
+                  <Input defaultValue="contato@studiojuliagatti.com.br" className="rounded-xl" />
                 </div>
               </div>
             </CardContent>
