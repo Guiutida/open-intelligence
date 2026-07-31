@@ -119,7 +119,7 @@ function BookingPage() {
 
   const [step, setStep] = useState(0);
   const [service, setService] = useState<Service | null>(null);
-  const [pro, setPro] = useState<Professional | null>(null);
+  const [pro, setPro] = useState<Professional | null>(defaultLashProfessionals[0]);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [time, setTime] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
@@ -162,9 +162,9 @@ function BookingPage() {
 
   // Verificar se o dia está fechado no banco
   const getDayConfig = (d: Date) => {
-    if (!studioInfo?.hours) return null;
+    const hours = studioInfo?.hours && studioInfo.hours.length > 0 ? studioInfo.hours : studio.hours;
     const dayName = DAY_MAP[d.getDay()];
-    return studioInfo.hours.find((h) => h.day === dayName) || null;
+    return hours.find((h) => h.day === dayName) || null;
   };
 
   const isDayClosed = (d: Date) => {
@@ -174,9 +174,10 @@ function BookingPage() {
 
   // Gerar horários dinâmicos baseados no dia selecionado
   const rawSlots = useMemo(() => {
-    if (!date) return [];
+    if (!date) return ALL_SLOTS;
     const cfg = getDayConfig(date);
-    return generateSlotsForDay(cfg?.time);
+    const generated = generateSlotsForDay(cfg?.time);
+    return generated.length > 0 ? generated : ALL_SLOTS;
   }, [date, studioInfo]);
 
   // Filtrar horários ocupados para a data e profissional selecionados
