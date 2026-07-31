@@ -80,15 +80,8 @@ export const professionals: Professional[] = [
     id: "p1",
     name: "Júlia Gatti",
     role: "Master Lash Designer & Fundadora",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&q=80",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
     rating: 5.0,
-  },
-  {
-    id: "p2",
-    name: "Equipe Studio Júlia Gatti",
-    role: "Lash Designer Especialista",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&q=80",
-    rating: 4.9,
   },
 ];
 
