@@ -6,56 +6,69 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, KeyRound, Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
+import { Loader2, KeyRound, Mail, Lock, ArrowRight, UserPlus } from "lucide-react";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("admin@juliagatti.com.br");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resetMode, setResetMode] = useState(false);
+  const [mode, setMode] = useState<"login" | "register" | "reset">("login");
   const [resetSent, setResetSent] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!isSupabaseConfigured || !supabase) {
+      toast.error("Serviço de autenticação temporariamente indisponível. Verifique a configuração do Supabase.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      if (resetMode) {
-        if (isSupabaseConfigured && supabase) {
-          const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/login`,
-          });
-          if (error) throw error;
-        }
+      if (mode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/login`,
+        });
+        if (error) throw error;
         setResetSent(true);
         toast.success("E-mail de redefinição enviado com sucesso!");
-      } else {
-        // Tentar autenticar com Supabase se configurado
-        if (isSupabaseConfigured && supabase) {
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) {
-            console.warn("Autenticação Supabase não encontrada, permitindo acesso demo para a gestão:", error.message);
-          }
+      } else if (mode === "register") {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              role: "admin",
+              full_name: "Júlia Gatti",
+            },
+          },
+        });
+        if (error) throw error;
+
+        if (data.session) {
+          toast.success("Conta do Studio cadastrada com sucesso!");
+          window.location.href = "/dashboard";
+        } else {
+          toast.success("Conta criada! Verifique seu e-mail para confirmar a ativação ou faça login.");
+          setMode("login");
         }
-        toast.success("Bem-vinda ao Painel do Studio Júlia Gatti!");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        toast.success("Login realizado com sucesso!");
         window.location.href = "/dashboard";
       }
     } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Erro ao autenticar. Redirecionando...");
-      window.location.href = "/dashboard";
+      console.error("Erro na autenticação:", err);
+      toast.error(err?.message || "Falha ao realizar autenticação.");
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleDemoAccess() {
-    toast.success("Acessando painel em modo administrativo demo!");
-    window.location.href = "/dashboard";
   }
 
   return (
@@ -67,12 +80,18 @@ export default function LoginPage() {
               <KeyRound className="size-6" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
-              {resetMode ? "Redefinir Senha" : "Painel Administrativo"}
+              {mode === "reset"
+                ? "Redefinir Senha"
+                : mode === "register"
+                  ? "Criar Conta do Studio"
+                  : "Painel Administrativo"}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {resetMode
+              {mode === "reset"
                 ? "Digite seu e-mail para receber as instruções de recuperação."
-                : "Acesso exclusivo para a gestão e equipe do Studio Júlia Gatti."}
+                : mode === "register"
+                  ? "Cadastre o e-mail oficial da Júlia Gatti para gerenciar o estúdio."
+                  : "Acesso exclusivo para a gestão e equipe do Studio Júlia Gatti."}
             </p>
           </div>
 
@@ -81,7 +100,7 @@ export default function LoginPage() {
               <p className="text-sm font-medium text-emerald-600">
                 Verifique sua caixa de entrada! Enviamos um link de redefinição para <strong>{email}</strong>.
               </p>
-              <Button variant="outline" className="rounded-xl w-full" onClick={() => setResetMode(false)}>
+              <Button variant="outline" className="rounded-xl w-full" onClick={() => { setMode("login"); setResetSent(false); }}>
                 Voltar ao Login
               </Button>
             </div>
@@ -89,7 +108,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <Label className="text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                  <Mail className="size-3.5 text-slate-400" /> E-mail da Dona / Gestora
+                  <Mail className="size-3.5 text-slate-400" /> E-mail
                 </Label>
                 <Input
                   type="email"
@@ -101,19 +120,21 @@ export default function LoginPage() {
                 />
               </div>
 
-              {!resetMode && (
+              {mode !== "reset" && (
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <Label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                       <Lock className="size-3.5 text-slate-400" /> Senha
                     </Label>
-                    <button
-                      type="button"
-                      onClick={() => setResetMode(true)}
-                      className="text-xs font-medium text-[#F87171] hover:underline"
-                    >
-                      Esqueci minha senha
-                    </button>
+                    {mode === "login" && (
+                      <button
+                        type="button"
+                        onClick={() => setMode("reset")}
+                        className="text-xs font-medium text-[#F87171] hover:underline"
+                      >
+                        Esqueci minha senha
+                      </button>
+                    )}
                   </div>
                   <Input
                     type="password"
@@ -129,40 +150,50 @@ export default function LoginPage() {
               <Button type="submit" className="w-full h-12 rounded-xl text-sm font-semibold mt-2 bg-[#F87171] hover:bg-[#ef4444]" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="size-4 animate-spin mr-2" /> Entrando...
+                    <Loader2 className="size-4 animate-spin mr-2" /> Processando...
                   </>
-                ) : resetMode ? (
+                ) : mode === "reset" ? (
                   "Enviar Link de Recuperação"
+                ) : mode === "register" ? (
+                  <>
+                    <UserPlus className="size-4 mr-2" /> Criar Conta
+                  </>
                 ) : (
                   <>
-                    Acessar Painel <ArrowRight className="size-4 ml-1.5" />
+                    Entrar no Painel <ArrowRight className="size-4 ml-1.5" />
                   </>
                 )}
               </Button>
 
-              {!resetMode && (
-                <div className="pt-2">
-                  <Button
+              <div className="pt-2 text-center">
+                {mode === "login" && (
+                  <button
                     type="button"
-                    variant="outline"
-                    onClick={handleDemoAccess}
-                    className="w-full h-11 rounded-xl text-xs font-medium border-dashed border-slate-300 text-slate-600 hover:bg-slate-50"
+                    onClick={() => setMode("register")}
+                    className="text-xs font-medium text-slate-600 hover:text-slate-900 hover:underline"
                   >
-                    <Sparkles className="size-3.5 mr-1.5 text-amber-500" /> Entrar no Modo Demonstração (Sem Senha)
-                  </Button>
-                </div>
-              )}
-
-              {resetMode && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="w-full rounded-xl text-xs"
-                  onClick={() => setResetMode(false)}
-                >
-                  Cancelar e voltar
-                </Button>
-              )}
+                    Ainda não tem conta? <strong>Criar conta para a Júlia</strong>
+                  </button>
+                )}
+                {mode === "register" && (
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className="text-xs font-medium text-slate-600 hover:text-slate-900 hover:underline"
+                  >
+                    Já possui conta? <strong>Fazer Login</strong>
+                  </button>
+                )}
+                {mode === "reset" && (
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className="text-xs font-medium text-slate-600 hover:text-slate-900 hover:underline"
+                  >
+                    Cancelar e voltar ao login
+                  </button>
+                )}
+              </div>
             </form>
           )}
         </CardContent>
