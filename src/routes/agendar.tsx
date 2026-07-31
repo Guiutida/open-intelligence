@@ -34,7 +34,15 @@ import {
   type Service,
   type Appointment,
 } from "@/lib/mock-data";
-import { getServices, getProfessionals, getAppointments, createAppointment, updateAppointmentStatus } from "@/lib/db-service";
+import {
+  getServices,
+  getProfessionals,
+  getAppointments,
+  createAppointment,
+  updateAppointmentStatus,
+  defaultLashServices,
+  defaultLashProfessionals,
+} from "@/lib/db-service";
 
 type BookingSearch = {
   serviceId?: string;
@@ -103,11 +111,11 @@ function generateSlotsForDay(hoursString?: string): string[] {
 
 function BookingPage() {
   const { serviceId } = Route.useSearch();
-  const [servicesList, setServicesList] = useState<Service[]>([]);
-  const [professionalsList, setProfessionalsList] = useState<Professional[]>([]);
+  const [servicesList, setServicesList] = useState<Service[]>(defaultLashServices);
+  const [professionalsList, setProfessionalsList] = useState<Professional[]>(defaultLashProfessionals);
   const [existingAppointments, setExistingAppointments] = useState<Appointment[]>([]);
   const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
 
   const [step, setStep] = useState(0);
   const [service, setService] = useState<Service | null>(null);
@@ -131,19 +139,14 @@ function BookingPage() {
           getAppointments(),
           getStudioSettings(),
         ]);
-        setServicesList(svcs);
-        setProfessionalsList(pros);
+        if (svcs && svcs.length > 0) setServicesList(svcs);
+        if (pros && pros.length > 0) setProfessionalsList(pros);
         setExistingAppointments(appts);
         setStudioInfo(info);
 
-        // Se só tem 1 profissional cadastrada, seleciona ela automaticamente
-        if (pros.length === 1) {
-          setPro(pros[0]);
-        }
-
-        // Se veio serviceId via URL (clique direto na Home)
+        // Se veio serviceId via URL
         if (serviceId) {
-          const found = svcs.find((s) => s.id === serviceId);
+          const found = (svcs && svcs.length > 0 ? svcs : defaultLashServices).find((s) => s.id === serviceId);
           if (found) {
             setService(found);
           }

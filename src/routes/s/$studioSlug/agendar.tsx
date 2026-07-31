@@ -35,6 +35,8 @@ import {
   getProfessionals,
   getStudioSettings,
   createAppointment,
+  defaultLashServices,
+  defaultLashProfessionals,
   type Professional,
   type Service,
   type Appointment,
@@ -75,9 +77,9 @@ function StudioDynamicBookingPage() {
 
   const [studioRecord, setStudioRecord] = useState<StudioRecord | null>(null);
   const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null);
-  const [servicesList, setServicesList] = useState<Service[]>([]);
-  const [prosList, setProsList] = useState<Professional[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [servicesList, setServicesList] = useState<Service[]>(defaultLashServices);
+  const [prosList, setProsList] = useState<Professional[]>(defaultLashProfessionals);
+  const [loading, setLoading] = useState(false);
 
   const [step, setStep] = useState(0);
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(search.serviceId || null);
