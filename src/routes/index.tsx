@@ -10,7 +10,6 @@ import {
   Sparkles,
   Clock,
   CalendarDays,
-  User,
   ExternalLink,
   Navigation,
   Loader2,
@@ -111,16 +110,6 @@ function PublicPage() {
             <span className="flex items-center gap-2 font-semibold tracking-wide text-sm drop-shadow-md">
               <Sparkles className="size-4 text-amber-300" /> {info.studio_name}
             </span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="rounded-full text-white bg-black/30 hover:bg-black/50 backdrop-blur-md border border-white/20 text-xs sm:text-sm font-medium gap-1.5 shadow-sm"
-              asChild
-            >
-              <Link to="/login">
-                <User className="size-4" /> Painel Administrativo
-              </Link>
-            </Button>
           </div>
         </header>
 
