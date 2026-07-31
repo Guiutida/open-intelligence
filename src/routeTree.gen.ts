@@ -11,18 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AgendarRouteImport } from './routes/agendar'
-import { Route as DashboardRouteRouteImport } from './routes/dashboard/route'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as DashboardAgendaRouteImport } from './routes/dashboard/agenda'
-import { Route as DashboardAgendamentosRouteImport } from './routes/dashboard/agendamentos'
-import { Route as DashboardClientesRouteImport } from './routes/dashboard/clientes'
-import { Route as DashboardConfiguracoesRouteImport } from './routes/dashboard/configuracoes'
-import { Route as DashboardEquipeRouteImport } from './routes/dashboard/equipe'
-import { Route as DashboardFinanceiroRouteImport } from './routes/dashboard/financeiro'
-import { Route as DashboardServicosRouteImport } from './routes/dashboard/servicos'
 import { Route as SStudioSlugAgendarRouteImport } from './routes/s/$studioSlug/agendar'
 
 const IndexRoute = IndexRouteImport.update({
@@ -35,16 +25,6 @@ const AgendarRoute = AgendarRouteImport.update({
   path: '/agendar',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardRouteRoute = DashboardRouteRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
@@ -55,46 +35,6 @@ const TermosRoute = TermosRouteImport.update({
   path: '/termos',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardIndexRoute = DashboardIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardAgendaRoute = DashboardAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardAgendamentosRoute = DashboardAgendamentosRouteImport.update({
-  id: '/agendamentos',
-  path: '/agendamentos',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardClientesRoute = DashboardClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardConfiguracoesRoute = DashboardConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardEquipeRoute = DashboardEquipeRouteImport.update({
-  id: '/equipe',
-  path: '/equipe',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardFinanceiroRoute = DashboardFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
-const DashboardServicosRoute = DashboardServicosRouteImport.update({
-  id: '/servicos',
-  path: '/servicos',
-  getParentRoute: () => DashboardRouteRoute,
-} as any)
 const SStudioSlugAgendarRoute = SStudioSlugAgendarRouteImport.update({
   id: '/s/$studioSlug/agendar',
   path: '/s/$studioSlug/agendar',
@@ -103,113 +43,44 @@ const SStudioSlugAgendarRoute = SStudioSlugAgendarRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteRouteWithChildren
   '/agendar': typeof AgendarRoute
-  '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
-  '/dashboard/agenda': typeof DashboardAgendaRoute
-  '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
-  '/dashboard/clientes': typeof DashboardClientesRoute
-  '/dashboard/configuracoes': typeof DashboardConfiguracoesRoute
-  '/dashboard/equipe': typeof DashboardEquipeRoute
-  '/dashboard/financeiro': typeof DashboardFinanceiroRoute
-  '/dashboard/servicos': typeof DashboardServicosRoute
-  '/dashboard/': typeof DashboardIndexRoute
   '/s/$studioSlug/agendar': typeof SStudioSlugAgendarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agendar': typeof AgendarRoute
-  '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
-  '/dashboard/agenda': typeof DashboardAgendaRoute
-  '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
-  '/dashboard/clientes': typeof DashboardClientesRoute
-  '/dashboard/configuracoes': typeof DashboardConfiguracoesRoute
-  '/dashboard/equipe': typeof DashboardEquipeRoute
-  '/dashboard/financeiro': typeof DashboardFinanceiroRoute
-  '/dashboard/servicos': typeof DashboardServicosRoute
-  '/dashboard': typeof DashboardIndexRoute
   '/s/$studioSlug/agendar': typeof SStudioSlugAgendarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/dashboard': typeof DashboardRouteRouteWithChildren
   '/agendar': typeof AgendarRoute
-  '/login': typeof LoginRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
-  '/dashboard/agenda': typeof DashboardAgendaRoute
-  '/dashboard/agendamentos': typeof DashboardAgendamentosRoute
-  '/dashboard/clientes': typeof DashboardClientesRoute
-  '/dashboard/configuracoes': typeof DashboardConfiguracoesRoute
-  '/dashboard/equipe': typeof DashboardEquipeRoute
-  '/dashboard/financeiro': typeof DashboardFinanceiroRoute
-  '/dashboard/servicos': typeof DashboardServicosRoute
-  '/dashboard/': typeof DashboardIndexRoute
   '/s/$studioSlug/agendar': typeof SStudioSlugAgendarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
-    | '/dashboard'
-    | '/agendar'
-    | '/login'
-    | '/privacidade'
-    | '/termos'
-    | '/dashboard/agenda'
-    | '/dashboard/agendamentos'
-    | '/dashboard/clientes'
-    | '/dashboard/configuracoes'
-    | '/dashboard/equipe'
-    | '/dashboard/financeiro'
-    | '/dashboard/servicos'
-    | '/dashboard/'
-    | '/s/$studioSlug/agendar'
+    '/' | '/agendar' | '/privacidade' | '/termos' | '/s/$studioSlug/agendar'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/agendar'
-    | '/login'
-    | '/privacidade'
-    | '/termos'
-    | '/dashboard/agenda'
-    | '/dashboard/agendamentos'
-    | '/dashboard/clientes'
-    | '/dashboard/configuracoes'
-    | '/dashboard/equipe'
-    | '/dashboard/financeiro'
-    | '/dashboard/servicos'
-    | '/dashboard'
-    | '/s/$studioSlug/agendar'
+  to: '/' | '/agendar' | '/privacidade' | '/termos' | '/s/$studioSlug/agendar'
   id:
     | '__root__'
     | '/'
-    | '/dashboard'
     | '/agendar'
-    | '/login'
     | '/privacidade'
     | '/termos'
-    | '/dashboard/agenda'
-    | '/dashboard/agendamentos'
-    | '/dashboard/clientes'
-    | '/dashboard/configuracoes'
-    | '/dashboard/equipe'
-    | '/dashboard/financeiro'
-    | '/dashboard/servicos'
-    | '/dashboard/'
     | '/s/$studioSlug/agendar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
   AgendarRoute: typeof AgendarRoute
-  LoginRoute: typeof LoginRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
   SStudioSlugAgendarRoute: typeof SStudioSlugAgendarRoute
@@ -231,20 +102,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgendarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/privacidade': {
       id: '/privacidade'
       path: '/privacidade'
@@ -259,62 +116,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/': {
-      id: '/dashboard/'
-      path: '/'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof DashboardIndexRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/agenda': {
-      id: '/dashboard/agenda'
-      path: '/agenda'
-      fullPath: '/dashboard/agenda'
-      preLoaderRoute: typeof DashboardAgendaRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/agendamentos': {
-      id: '/dashboard/agendamentos'
-      path: '/agendamentos'
-      fullPath: '/dashboard/agendamentos'
-      preLoaderRoute: typeof DashboardAgendamentosRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/clientes': {
-      id: '/dashboard/clientes'
-      path: '/clientes'
-      fullPath: '/dashboard/clientes'
-      preLoaderRoute: typeof DashboardClientesRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/configuracoes': {
-      id: '/dashboard/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/dashboard/configuracoes'
-      preLoaderRoute: typeof DashboardConfiguracoesRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/equipe': {
-      id: '/dashboard/equipe'
-      path: '/equipe'
-      fullPath: '/dashboard/equipe'
-      preLoaderRoute: typeof DashboardEquipeRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/financeiro': {
-      id: '/dashboard/financeiro'
-      path: '/financeiro'
-      fullPath: '/dashboard/financeiro'
-      preLoaderRoute: typeof DashboardFinanceiroRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
-    '/dashboard/servicos': {
-      id: '/dashboard/servicos'
-      path: '/servicos'
-      fullPath: '/dashboard/servicos'
-      preLoaderRoute: typeof DashboardServicosRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     '/s/$studioSlug/agendar': {
       id: '/s/$studioSlug/agendar'
       path: '/s/$studioSlug/agendar'
@@ -325,37 +126,9 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface DashboardRouteRouteChildren {
-  DashboardAgendaRoute: typeof DashboardAgendaRoute
-  DashboardAgendamentosRoute: typeof DashboardAgendamentosRoute
-  DashboardClientesRoute: typeof DashboardClientesRoute
-  DashboardConfiguracoesRoute: typeof DashboardConfiguracoesRoute
-  DashboardEquipeRoute: typeof DashboardEquipeRoute
-  DashboardFinanceiroRoute: typeof DashboardFinanceiroRoute
-  DashboardServicosRoute: typeof DashboardServicosRoute
-  DashboardIndexRoute: typeof DashboardIndexRoute
-}
-
-const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
-  DashboardAgendaRoute: DashboardAgendaRoute,
-  DashboardAgendamentosRoute: DashboardAgendamentosRoute,
-  DashboardClientesRoute: DashboardClientesRoute,
-  DashboardConfiguracoesRoute: DashboardConfiguracoesRoute,
-  DashboardEquipeRoute: DashboardEquipeRoute,
-  DashboardFinanceiroRoute: DashboardFinanceiroRoute,
-  DashboardServicosRoute: DashboardServicosRoute,
-  DashboardIndexRoute: DashboardIndexRoute,
-}
-
-const DashboardRouteRouteWithChildren = DashboardRouteRoute._addFileChildren(
-  DashboardRouteRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DashboardRouteRoute: DashboardRouteRouteWithChildren,
   AgendarRoute: AgendarRoute,
-  LoginRoute: LoginRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
   SStudioSlugAgendarRoute: SStudioSlugAgendarRoute,
